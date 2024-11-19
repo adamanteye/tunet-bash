@@ -59,6 +59,24 @@ fetch_challenge() {
     echo $challenge
 }
 
+gen_hmacmd5() {
+    echo -n $1 | openssl dgst -md5 -hmac "" | sed 's/^.* //'
+}
+
+post_info() {
+    local password_md5=$(gen_hmacmd5 $1 | base64)
+    log_debug "password_md5: $password_md5"
+    local json=$(jq -n \
+        --arg username $USERNAME \
+        --arg password $PASSWORD \
+        --arg ip "" \
+        --arg acid "$2" \
+        --arg enc_ver "srun_bx1" \
+        '{username: $username, password: $password, ip: $ip, acid: $acid, enc_ver: $enc_ver}')
+    echo $json
+}
+
 log_debug "begin login"
 ac_id=$(fetch_ac_id)
 challenge=$(fetch_challenge)
+post_info $challenge $ac_id
