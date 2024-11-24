@@ -64,7 +64,8 @@ gen_hmacmd5() {
 }
 
 post_info() {
-    local password_md5=$(gen_hmacmd5 $1)
+    local challenge=$1
+    local password_md5=$(gen_hmacmd5 $challenge)
     log_debug "password_md5: $password_md5"
     local json=$(jq -n \
         --arg username $USERNAME \
@@ -73,10 +74,13 @@ post_info() {
         --arg acid "$2" \
         --arg enc_ver "srun_bx1" \
         '{acid:$acid,enc_ver:$enc_ver,ip: $ip,password:$password,username:$username}')
-    echo $(echo $json | sed 's/ //g')
+    echo -n $json | sed 's/ //g' > data.txt
+    echo $(./tea $challenge ./data.txt)
+    rm -f data.txt
 }
 
 log_debug "begin login"
+log_debug "$(make all)"
 ac_id=$(fetch_ac_id)
 challenge=$(fetch_challenge)
 post_info $challenge $ac_id
