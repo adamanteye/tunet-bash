@@ -64,7 +64,7 @@ gen_hmacmd5() {
 }
 
 post_info() {
-    local password_md5=$(gen_hmacmd5 $1 | base64)
+    local password_md5=$(gen_hmacmd5 $1)
     log_debug "password_md5: $password_md5"
     local json=$(jq -n \
         --arg username $USERNAME \
@@ -72,8 +72,8 @@ post_info() {
         --arg ip "" \
         --arg acid "$2" \
         --arg enc_ver "srun_bx1" \
-        '{username: $username, password: $password, ip: $ip, acid: $acid, enc_ver: $enc_ver}')
-    echo $json
+        '{acid:$acid,enc_ver:$enc_ver,ip: $ip,password:$password,username:$username}')
+    echo $(echo $json | sed 's/ //g')
 }
 
 log_debug "begin login"
