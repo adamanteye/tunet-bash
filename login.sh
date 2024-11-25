@@ -75,12 +75,19 @@ post_info() {
         --arg enc_ver "srun_bx1" \
         '{acid:$acid,enc_ver:$enc_ver,ip: $ip,password:$password,username:$username}')
     echo -n $json | sed 's/ //g' > data.txt
-    echo $(./tea $challenge ./data.txt)
-    rm -f data.txt
+    log_debug "encoded_data: $(./tea $challenge ./data.txt)"
+    echo $(base64 encoded_output.bin | tr -d '\n')
+    rm -f data.txt encoded_output.bin
+}
+
+custom_base64_encode() {
+    echo "$1" | tr \
+   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
+   'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA'
 }
 
 log_debug "begin login"
 log_debug "$(make all)"
 ac_id=$(fetch_ac_id)
 challenge=$(fetch_challenge)
-post_info $challenge $ac_id
+info="{SRBX1}$(custom_base64_encode $(post_info $challenge $ac_id))"

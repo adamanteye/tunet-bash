@@ -112,11 +112,18 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<uint8_t[]> encoded_data;
     size_t encoded_data_len;
     authtea.encode(data.data(), data.size(), encoded_data, encoded_data_len);
-
     for (size_t i = 0; i < encoded_data_len; ++i) {
         std::cout << std::hex << static_cast<int>(encoded_data[i]);
     }
     std::cout << std::endl;
-
+    std::ofstream output_file("encoded_output.bin", std::ios::binary);
+    if (!output_file.is_open()) {
+        std::cerr << "Error: Unable to open output file for writing."
+                  << std::endl;
+        return 1;
+    }
+    output_file.write(reinterpret_cast<char*>(encoded_data.get()),
+                      encoded_data_len);
+    output_file.close();
     return 0;
 }
