@@ -91,18 +91,20 @@ bool read_file_content(const std::string& filename, std::string& content) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <key> <data_file>" << std::endl;
+    if (argc < 4) {
+        std::cerr << "Usage: " << argv[0] << " <key> <input_file> <output_file>"
+                  << std::endl;
         return 1;
     }
 
     const std::string key_str = argv[1];
-    const std::string data_file = argv[2];
+    const std::string input_file = argv[2];
+    const std::string output_file = argv[3];
 
     std::vector<uint8_t> key(key_str.begin(), key_str.end());
 
     std::string data_str;
-    if (!read_file_content(data_file, data_str)) {
+    if (!read_file_content(input_file, data_str)) {
         return 1;
     }
 
@@ -116,14 +118,13 @@ int main(int argc, char* argv[]) {
         std::cout << std::hex << static_cast<int>(encoded_data[i]);
     }
     std::cout << std::endl;
-    std::ofstream output_file("encoded_output.bin", std::ios::binary);
-    if (!output_file.is_open()) {
+    std::ofstream f(output_file, std::ios::binary);
+    if (!f.is_open()) {
         std::cerr << "Error: Unable to open output file for writing."
                   << std::endl;
         return 1;
     }
-    output_file.write(reinterpret_cast<char*>(encoded_data.get()),
-                      encoded_data_len);
-    output_file.close();
+    f.write(reinterpret_cast<char*>(encoded_data.get()), encoded_data_len);
+    f.close();
     return 0;
 }
