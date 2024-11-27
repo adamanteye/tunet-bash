@@ -17,8 +17,13 @@ log_error() {
     echo "$(log_date) ERROR $1" >&2
 }
 
-if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
-    log_error "TUNET_USERNAME or TUNET_PASSWORD is not set"
+if [ -z "$USERNAME" ]; then
+    log_error "TUNET_USERNAME is not set"
+    exit 1
+fi
+
+if [ -z "$PASSWORD" ]; then
+    log_error "TUNET_PASSWORD is not set"
     exit 1
 fi
 
