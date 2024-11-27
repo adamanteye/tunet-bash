@@ -30,8 +30,10 @@ export LOG_LEVEL=debug # default info
 -   make
 -   clang 或 gcc
 
-## 参考
+## 参考与致谢
 
 -   [tunet-rust](https://github.com/Berrysoft/tunet-rust)
--   [tunet-python](https://github.com/yuantailing/tunet-python/)
+-   [清华校园网自动连接脚本](https://github.com/WhymustIhaveaname/TsinghuaTunet)
 -   [某校园网认证api分析](https://www.ciduid.top/2022/0706/school-network-auth/)
+-   [tunet-python](https://github.com/yuantailing/tunet-python/)
+-   [GoAuthing](https://github.com/z4yx/GoAuthing)
