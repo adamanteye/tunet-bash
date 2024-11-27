@@ -77,40 +77,74 @@ post_info() {
     rm -f data.txt encoded_output.bin
 }
 
-log_debug "begin login"
-log_debug "$(make all)"
-log_debug "remove cookies $(rm -f cookies.txt)"
-ac_id=$(fetch_ac_id)
-challenge=$(fetch_challenge)
-log_debug "challenge: $challenge"
-info="{SRBX1}$(post_info $challenge $ac_id)"
-log_debug "info: $info"
-password_md5=$(gen_hmacmd5 $challenge)
-log_debug "password_md5: {MD5}$password_md5"
-checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
-checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
-log_debug "checksum: $checksum"
-log_debug "make login request"
-response=$(curl --cookie cookies.txt --cookie-jar cookies.txt -s -X POST "$AUTH4_LOGIN_URL" \
-    -H "Content-Type: application/x-www-form-urlencoded" \
-    --data-urlencode "action=login" \
-    --data-urlencode "ac_id=$ac_id" \
-    --data-urlencode "double_stack=1" \
-    --data-urlencode "n=200" \
-    --data-urlencode "type=1" \
-    --data-urlencode "username=$USERNAME" \
-    --data-urlencode "password={MD5}$password_md5" \
-    --data-urlencode "info=$info" \
-    --data-urlencode "chksum=$checksum" \
-    --data-urlencode "callback=callback")
-log_debug "response: $response"
-log_debug "remove cookies $(rm -f cookies.txt)"
-len=$((${#response}-10))
-response=${response:9:$len}
-suc_msg=$(echo $response | jq -r '.suc_msg')
-log_info "$suc_msg"
-if [ "$suc_msg" != "login_ok" ]; then
-    exit 1
+login() {
+    log_debug "begin login"
+    log_debug "$(make all)"
+    log_debug "remove cookies $(rm -f cookies.txt)"
+    ac_id=$(fetch_ac_id)
+    challenge=$(fetch_challenge)
+    log_debug "challenge: $challenge"
+    info="{SRBX1}$(post_info $challenge $ac_id)"
+    log_debug "info: $info"
+    password_md5=$(gen_hmacmd5 $challenge)
+    log_debug "password_md5: {MD5}$password_md5"
+    checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
+    checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
+    log_debug "checksum: $checksum"
+    log_debug "make login request"
+    response=$(curl --cookie cookies.txt --cookie-jar cookies.txt -s -X POST "$AUTH4_LOGIN_URL" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        --data-urlencode "action=login" \
+        --data-urlencode "ac_id=$ac_id" \
+        --data-urlencode "double_stack=1" \
+        --data-urlencode "n=200" \
+        --data-urlencode "type=1" \
+        --data-urlencode "username=$USERNAME" \
+        --data-urlencode "password={MD5}$password_md5" \
+        --data-urlencode "info=$info" \
+        --data-urlencode "chksum=$checksum" \
+        --data-urlencode "callback=callback")
+    log_debug "response: $response"
+    log_debug "remove cookies $(rm -f cookies.txt)"
+    len=$((${#response}-10))
+    response=${response:9:$len}
+    suc_msg=$(echo $response | jq -r '.suc_msg')
+    log_info "$suc_msg"
+    if [ "$suc_msg" != "login_ok" ]; then
+        exit 1
+    else
+        exit 0
+    fi
+}
+
+logout() {
+    log_debug "begin logout"
+    local response=$(curl -s -X POST "$AUTH4_LOGIN_URL" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        --data-urlencode "action=logout" \
+        --data-urlencode "ac_id=1" \
+        --data-urlencode "double_stack=1" \
+        --data-urlencode "username=$USERNAME" \
+        --data-urlencode "callback=callback")
+    log_debug "response: $response"
+    local len=$((${#response}-10))
+    local response=${response:9:$len}
+    local suc_msg=$(echo $response | jq -r '.error')
+    log_info "$suc_msg"
+    if [ "$suc_msg" != "ok" ]; then
+        local error_msg=$(echo $response | jq -r '.error_msg')
+        log_error "$error_msg"
+        exit 1
+    else
+        exit 0
+    fi
+}
+
+if [ "$1" == "login" ]; then
+    login
+elif [ "$1" == "logout" ]; then
+    logout
 else
-    exit 0
+    echo "Usage: $0 {login|logout}"
+    exit 1
 fi
