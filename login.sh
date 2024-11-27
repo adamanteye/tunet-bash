@@ -51,7 +51,6 @@ fetch_ac_id() {
 fetch_challenge() {
     log_debug "fetch challenge"
     local res=$(curl -s "$AUTH4_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
-    log_debug "response: $res"
     local len=$((${#res}-10))
     local res=${res:9:$len}
     local challenge=$(echo $res | jq -r '.challenge')
@@ -65,8 +64,6 @@ gen_hmacmd5() {
 
 post_info() {
     local challenge=$1
-    local password_md5=$(gen_hmacmd5 $challenge)
-    log_debug "password_md5: $password_md5"
     local json=$(jq -n \
         --arg username $USERNAME \
         --arg password $PASSWORD \
@@ -75,19 +72,34 @@ post_info() {
         --arg enc_ver "srun_bx1" \
         '{acid:$acid,enc_ver:$enc_ver,ip: $ip,password:$password,username:$username}')
     echo -n $json | sed 's/ //g' > data.txt
-    log_debug "encoded_data: $(./tea $challenge ./data.txt)"
-    echo $(base64 encoded_output.bin | tr -d '\n')
+    ./tea $challenge ./data.txt
+    echo $(base64 encoded_output.bin | tr -d '\n' | tr \
+       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
+       'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
     rm -f data.txt encoded_output.bin
-}
-
-custom_base64_encode() {
-    echo "$1" | tr \
-   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
-   'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA'
 }
 
 log_debug "begin login"
 log_debug "$(make all)"
 ac_id=$(fetch_ac_id)
 challenge=$(fetch_challenge)
-info="{SRBX1}$(custom_base64_encode $(post_info $challenge $ac_id))"
+info="{SRBX1}$(post_info $challenge $ac_id)"
+log_debug "info: $info"
+password_md5=$(gen_hmacmd5 $challenge)
+log_debug "password_md5: {MD5}$password_md5"
+checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
+checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
+log_debug "checksum: $checksum"
+log_debug "make login request"
+response=$(curl -s -X POST "$AUTH4_LOGIN_URL" \
+    -d "action=login" \
+    -d "ac_id=$ac_id" \
+    -d "double_stack=1" \
+    -d "n=200" \
+    -d "type=1" \
+    -d "username=$USERNAME" \
+    -d "password={MD5}$password_md5" \
+    -d "info=$info" \
+    -d "chksum=$checksum" \
+    -d "callback=callback")
+log_debug "response: $response"
