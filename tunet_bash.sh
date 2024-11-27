@@ -92,7 +92,7 @@ login() {
     checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
     log_debug "checksum: $checksum"
     log_debug "make login request"
-    response=$(curl --cookie cookies.txt --cookie-jar cookies.txt -s -X POST "$AUTH4_LOGIN_URL" \
+    response=$(curl --cookie cookies.txt --cookie-jar cookies.txt -s -X POST "$AUTH4_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "action=login" \
         --data-urlencode "ac_id=$ac_id" \
@@ -119,7 +119,7 @@ login() {
 
 logout() {
     log_debug "begin logout"
-    local response=$(curl -s -X POST "$AUTH4_LOGIN_URL" \
+    local response=$(curl -s -X POST "$AUTH4_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "action=logout" \
         --data-urlencode "ac_id=1" \
