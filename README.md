@@ -27,6 +27,7 @@ export LOG_LEVEL=debug # default info
 -   bash
 -   openssl
 -   curl
+-   make
 -   clang 或 gcc
 
 ## 参考
