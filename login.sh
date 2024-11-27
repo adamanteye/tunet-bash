@@ -36,7 +36,7 @@ log_info() {
 
 fetch_ac_id() {
     log_debug "fetch ac_id"
-    local res=$(curl -s "$REDIRECT_URI")
+    local res=$(curl --cookie cookies.txt --cookie-jar cookies.txt -s "$REDIRECT_URI")
     [[ $(echo $res) =~ $REGEX_AC_ID ]]
     local ac_id=${BASH_REMATCH[1]}
     if [ -z "$ac_id" ]; then
@@ -45,16 +45,14 @@ fetch_ac_id() {
     else
         echo "$ac_id"
     fi
-    log_debug "ac_id: $ac_id"
 }
 
 fetch_challenge() {
     log_debug "fetch challenge"
-    local res=$(curl -s "$AUTH4_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
+    local res=$(curl --cookie cookies.txt --cookie-jar cookies.txt -s "$AUTH4_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
     local len=$((${#res}-10))
     local res=${res:9:$len}
     local challenge=$(echo $res | jq -r '.challenge')
-    log_debug "challenge: $challenge"
     echo $challenge
 }
 
@@ -71,8 +69,8 @@ post_info() {
         --arg acid "$2" \
         --arg enc_ver "srun_bx1" \
         '{acid:$acid,enc_ver:$enc_ver,ip: $ip,password:$password,username:$username}')
-    echo -n $json | sed 's/ //g' > data.txt
-    ./tea $challenge ./data.txt
+    echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g' > data.txt
+    log_debug "encoded_json: $(./tea $challenge ./data.txt)" # note that tea also writes to stdout, which will pop up in the output
     echo $(base64 encoded_output.bin | tr -d '\n' | tr \
        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
        'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
@@ -81,8 +79,10 @@ post_info() {
 
 log_debug "begin login"
 log_debug "$(make all)"
+log_debug "remove cookies $(rm -f cookies.txt)"
 ac_id=$(fetch_ac_id)
 challenge=$(fetch_challenge)
+log_debug "challenge: $challenge"
 info="{SRBX1}$(post_info $challenge $ac_id)"
 log_debug "info: $info"
 password_md5=$(gen_hmacmd5 $challenge)
@@ -91,15 +91,26 @@ checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${
 checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
 log_debug "checksum: $checksum"
 log_debug "make login request"
-response=$(curl -s -X POST "$AUTH4_LOGIN_URL" \
-    -d "action=login" \
-    -d "ac_id=$ac_id" \
-    -d "double_stack=1" \
-    -d "n=200" \
-    -d "type=1" \
-    -d "username=$USERNAME" \
-    -d "password={MD5}$password_md5" \
-    -d "info=$info" \
-    -d "chksum=$checksum" \
-    -d "callback=callback")
+response=$(curl --cookie cookies.txt --cookie-jar cookies.txt -s -X POST "$AUTH4_LOGIN_URL" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    --data-urlencode "action=login" \
+    --data-urlencode "ac_id=$ac_id" \
+    --data-urlencode "double_stack=1" \
+    --data-urlencode "n=200" \
+    --data-urlencode "type=1" \
+    --data-urlencode "username=$USERNAME" \
+    --data-urlencode "password={MD5}$password_md5" \
+    --data-urlencode "info=$info" \
+    --data-urlencode "chksum=$checksum" \
+    --data-urlencode "callback=callback")
 log_debug "response: $response"
+log_debug "remove cookies $(rm -f cookies.txt)"
+len=$((${#response}-10))
+response=${response:9:$len}
+suc_msg=$(echo $response | jq -r '.suc_msg')
+log_info "$suc_msg"
+if [ "$suc_msg" != "login_ok" ]; then
+    exit 1
+else
+    exit 0
+fi

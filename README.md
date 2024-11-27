@@ -15,3 +15,4 @@
 
 -   [tunet-rust](https://github.com/Berrysoft/tunet-rust)
 -   [tunet-python](https://github.com/yuantailing/tunet-python/)
+-   [某校园网认证api分析](https://www.ciduid.top/2022/0706/school-network-auth/)
