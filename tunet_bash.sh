@@ -115,10 +115,11 @@ login() {
     len=$((${#response}-10))
     response=${response:9:$len}
     suc_msg=$(echo $response | jq -r '.suc_msg')
-    log_info "$suc_msg"
     if [ "$suc_msg" != "login_ok" ]; then
+        log_error "$suc_msg"
         exit 1
     else
+        log_info "$suc_msg"
         exit 0
     fi
 }
