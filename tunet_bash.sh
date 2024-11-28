@@ -164,6 +164,7 @@ set_config() {
     done
     echo "export TUNET_USERNAME=$USERNAME" > $SCRIPT_DIR/.env
     echo "export TUNET_PASSWORD=$PASSWORD" >> $SCRIPT_DIR/.env
+    chmod 600 .env
 }
 
 if [ "$1" == "login" ]; then
