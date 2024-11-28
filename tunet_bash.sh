@@ -2,6 +2,7 @@
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 source $SCRIPT_DIR/constants.sh
+source $SCRIPT_DIR/.env
 USERNAME="${TUNET_USERNAME}"
 PASSWORD="${TUNET_PASSWORD}"
 LOG_LEVEL="${LOG_LEVEL}"
@@ -147,11 +148,26 @@ logout() {
     fi
 }
 
+set_config() {
+    while [[ -z "$username" ]]; do
+        read -p "username: " username
+    done
+
+    while [[ -z "$password" ]]; do
+        read -s -p "password: " password
+        echo
+    done
+    echo "export TUNET_USERNAME=$username" > $SCRIPT_DIR/.env
+    echo "export TUNET_PASSWORD=$password" >> $SCRIPT_DIR/.env
+}
+
 if [ "$1" == "login" ]; then
     login
 elif [ "$1" == "logout" ]; then
     logout
+elif [ "$1" == "config" ]; then
+    set_config
 else
-    echo "Usage: $0 {login|logout}"
+    echo "Usage: $0 login | logout | config"
     exit 1
 fi

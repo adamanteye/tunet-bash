@@ -13,6 +13,12 @@ export LOG_LEVEL=debug # default info
 ./tunet_bash.sh login
 ```
 
+或者, 也可以将用户名和密码写入文件夹所在的 `.env` 文件中, 这一过程可以通过以下命令完成
+
+```sh
+./tunet_bash.sh config
+```
+
 ## 功能
 
 -   [x] Auth 4
