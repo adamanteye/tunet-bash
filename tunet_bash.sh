@@ -2,9 +2,6 @@
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 source $SCRIPT_DIR/constants.sh
-source $SCRIPT_DIR/.env
-USERNAME="${TUNET_USERNAME}"
-PASSWORD="${TUNET_PASSWORD}"
 LOG_LEVEL="${LOG_LEVEL}"
 
 if [ -z "$LOG_LEVEL" ]; then
@@ -19,15 +16,18 @@ log_error() {
     echo "$(log_date) ERROR $1" >&2
 }
 
-if [ -z "$USERNAME" ]; then
-    log_error "TUNET_USERNAME is not set"
-    exit 1
-fi
-
-if [ -z "$PASSWORD" ]; then
-    log_error "TUNET_PASSWORD is not set"
-    exit 1
-fi
+check_user() {
+    USERNAME="${TUNET_USERNAME}"
+    PASSWORD="${TUNET_PASSWORD}"
+    if [ -z "$USERNAME" ]; then
+        log_error "TUNET_USERNAME is not set"
+        exit 1
+    fi
+    if [ -z "$PASSWORD" ]; then
+        log_error "TUNET_PASSWORD is not set"
+        exit 1
+    fi
+}
 
 log_debug() {
     if [ "$LOG_LEVEL" == "debug" ]; then
@@ -85,6 +85,8 @@ post_info() {
 }
 
 login() {
+    source $SCRIPT_DIR/.env
+    check_user
     log_debug "begin login"
     log_debug "$(cd $SCRIPT_DIR && make all)"
     log_debug "remove cookies $(rm -f $SCRIPT_DIR/cookies.txt)"
@@ -126,6 +128,8 @@ login() {
 }
 
 logout() {
+    source $SCRIPT_DIR/.env
+    check_user
     log_debug "begin logout"
     local response=$(curl -s -X POST "$AUTH4_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
@@ -149,16 +153,17 @@ logout() {
 }
 
 set_config() {
-    while [[ -z "$username" ]]; do
-        read -p "username: " username
+    USERNAME="${TUNET_USERNAME}"
+    PASSWORD="${TUNET_PASSWORD}"
+    while [[ -z "$USERNAME" ]]; do
+        read -p "username: " USERNAME
     done
-
-    while [[ -z "$password" ]]; do
-        read -s -p "password: " password
+    while [[ -z "$PASSWORD" ]]; do
+        read -s -p "password: " PASSWORD
         echo
     done
-    echo "export TUNET_USERNAME=$username" > $SCRIPT_DIR/.env
-    echo "export TUNET_PASSWORD=$password" >> $SCRIPT_DIR/.env
+    echo "export TUNET_USERNAME=$USERNAME" > $SCRIPT_DIR/.env
+    echo "export TUNET_PASSWORD=$PASSWORD" >> $SCRIPT_DIR/.env
 }
 
 if [ "$1" == "login" ]; then
