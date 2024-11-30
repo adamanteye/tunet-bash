@@ -4,7 +4,22 @@
 
 -   Bash 编写, 适合 Live CD 引导装机, 小主机登录维持等场景
 
-## 使用
+## 使用指南
+
+### 安装
+
+```sh
+make all
+make install # default to $HOME/.tunet_bash
+```
+
+或者安装到自定义路径
+
+```sh
+make PREFIX=/usr/local/bin/tunet_bash install
+```
+
+### 命令
 
 ```sh
 export TUNET_USERNAME=<your username>

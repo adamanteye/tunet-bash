@@ -1,5 +1,10 @@
 #!/usr/bin/bash
 
+AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
+AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
+REDIRECT_URI="http://www.tsinghua.edu.cn/"
+REGEX_AC_ID='location\.href="http://auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
+
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 source $SCRIPT_DIR/constants.sh
 LOG_LEVEL="${LOG_LEVEL}"
@@ -88,7 +93,6 @@ login() {
     source $SCRIPT_DIR/.env
     check_user
     log_debug "begin login"
-    log_debug "$(cd $SCRIPT_DIR && make all)"
     log_debug "remove cookies $(rm -f $SCRIPT_DIR/cookies.txt)"
     ac_id=$(fetch_ac_id)
     challenge=$(fetch_challenge)
