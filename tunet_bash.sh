@@ -6,7 +6,6 @@ REDIRECT_URI="http://www.tsinghua.edu.cn/"
 REGEX_AC_ID='location\.href="http://auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-source $SCRIPT_DIR/constants.sh
 LOG_LEVEL="${LOG_LEVEL}"
 
 if [ -z "$LOG_LEVEL" ]; then
@@ -90,7 +89,7 @@ post_info() {
 }
 
 login() {
-    source $SCRIPT_DIR/.env
+    source $SCRIPT_DIR/.env 2>&1 /dev/null
     check_user
     log_debug "begin login"
     log_debug "remove cookies $(rm -f $SCRIPT_DIR/cookies.txt)"
@@ -168,7 +167,7 @@ set_config() {
     done
     echo "export TUNET_USERNAME=$USERNAME" > $SCRIPT_DIR/.env
     echo "export TUNET_PASSWORD=$PASSWORD" >> $SCRIPT_DIR/.env
-    chmod 600 .env
+    chmod 600 $SCRIPT_DIR/.env
 }
 
 if [ "$1" == "login" ]; then
