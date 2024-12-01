@@ -2,8 +2,8 @@
 
 ## 特点
 
--   主要由 Bash 编写, 适合 Live CD 引导装机, 小主机登录维持等场景
--   因为 srun 的自定义签名算法用 Bash 实现较为困难, 所以在这一部分使用 C++ 编写
+-   主要功能通过 Bash 实现, 适合 Live CD 引导装机, 小主机登录维持等场景
+-   因为 srun 的自定义签名算法用 Bash 实现较为困难, 所以这一部分使用 C++ 编写
 
 ## 使用指南
 
@@ -20,6 +20,8 @@ make install # default to $HOME/.tunet_bash
 make PREFIX=/usr/local/bin/tunet_bash install
 ```
 
+注意, tunet_bash 需要在安装目录下创建临时文件, 请确保安装目录有写入权限.
+
 ### 命令
 
 ```sh
@@ -35,6 +37,12 @@ export LOG_LEVEL=debug # default info
 ./tunet_bash.sh config
 ```
 
+如果查询当前登入用户, 可以使用
+
+```sh
+./tunet_bash.sh whoami
+```
+
 ## 功能
 
 -   [x] Auth 4
@@ -42,7 +50,8 @@ export LOG_LEVEL=debug # default info
 -   [ ] Net
 
 -   [x] 登入登出
--   [ ] 流量查询
+-   [x] 当前用户查询
+-   [ ] 历史流量查询
 
 ## 依赖
 

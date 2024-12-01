@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
+AUTH4_AC_ID_DETECT="https://auth4.tsinghua.edu.cn/ac_detect.php?ac_id=1"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
 REDIRECT_URI="http://www.tsinghua.edu.cn/"
 REGEX_AC_ID='location\.href="http://auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
@@ -151,6 +152,17 @@ logout() {
     fi
 }
 
+whoami() {
+    local user=$(curl -s --location $AUTH4_AC_ID_DETECT --dump-header - | sed -n 's/.*username=\([^&]*\).*/\1/p')
+    if [ -z "$user" ]; then
+        log_error "not logged in"
+        exit 1
+    else
+        log_info "$user"
+        exit 0
+    fi
+}
+
 set_config() {
     USERNAME="${TUNET_USERNAME}"
     PASSWORD="${TUNET_PASSWORD}"
@@ -170,9 +182,11 @@ if [ "$1" == "login" ]; then
     login
 elif [ "$1" == "logout" ]; then
     logout
+elif [ "$1" == "whoami" ]; then
+    whoami
 elif [ "$1" == "config" ]; then
     set_config
 else
-    echo "Usage: $0 login | logout | config"
+    echo "Usage: $0 login | logout | whoami | config"
     exit 1
 fi
