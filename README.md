@@ -2,7 +2,8 @@
 
 ## 特点
 
--   Bash 编写, 适合 Live CD 引导装机, 小主机登录维持等场景
+-   主要由 Bash 编写, 适合 Live CD 引导装机, 小主机登录维持等场景
+-   因为 srun 的自定义签名算法用 Bash 实现较为困难, 所以在这一部分使用 C++ 编写
 
 ## 使用指南
 
@@ -49,7 +50,7 @@ export LOG_LEVEL=debug # default info
 -   openssl
 -   curl
 -   make
--   clang 或 gcc
+-   clang++ 或 g++
 
 ## 参考与致谢
 
