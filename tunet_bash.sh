@@ -8,9 +8,7 @@ REGEX_AC_ID='location\.href="http://auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 LOG_LEVEL="${LOG_LEVEL}"
 
-if [ -z "$LOG_LEVEL" ]; then
-    LOG_LEVEL="info"
-fi
+[ -z "$LOG_LEVEL" ] && LOG_LEVEL="info"
 
 log_date() {
     echo "[$(date --rfc-3339 s)]"
@@ -34,9 +32,7 @@ check_user() {
 }
 
 log_debug() {
-    if [ "$LOG_LEVEL" == "debug" ]; then
-        echo -e "$(log_date) DEBUG $1" >&2
-    fi
+    [ "$LOG_LEVEL" == "debug" ] && echo -e "$(log_date) DEBUG $1" >&2
 }
 
 log_info() {
@@ -89,22 +85,22 @@ post_info() {
 }
 
 login() {
-    source $SCRIPT_DIR/.env 2>&1 /dev/null
+    [ -f "$SCRIPT_DIR/.env" ] && source "$SCRIPT_DIR/.env"
     check_user
     log_debug "begin login"
     log_debug "remove cookies $(rm -f $SCRIPT_DIR/cookies.txt)"
-    ac_id=$(fetch_ac_id)
-    challenge=$(fetch_challenge)
+    local ac_id=$(fetch_ac_id)
+    local challenge=$(fetch_challenge)
     log_debug "challenge: $challenge"
-    info="{SRBX1}$(post_info $challenge $ac_id)"
+    local info="{SRBX1}$(post_info $challenge $ac_id)"
     log_debug "info: $info"
-    password_md5=$(gen_hmacmd5 $challenge)
+    local password_md5=$(gen_hmacmd5 $challenge)
     log_debug "password_md5: {MD5}$password_md5"
-    checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
-    checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
+    local checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
+    local checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
     log_debug "checksum: $checksum"
     log_debug "make login request"
-    response=$(curl --cookie $SCRIPT_DIR/cookies.txt --cookie-jar $SCRIPT_DIR/cookies.txt -s -X POST "$AUTH4_LOG_URL" \
+    local response=$(curl --cookie $SCRIPT_DIR/cookies.txt --cookie-jar $SCRIPT_DIR/cookies.txt -s -X POST "$AUTH4_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "action=login" \
         --data-urlencode "ac_id=$ac_id" \
@@ -118,9 +114,9 @@ login() {
         --data-urlencode "callback=callback")
     log_debug "response: $response"
     log_debug "remove cookies $(rm -f $SCRIPT_DIR/cookies.txt)"
-    len=$((${#response}-10))
-    response=${response:9:$len}
-    suc_msg=$(echo $response | jq -r '.suc_msg')
+    local len=$((${#response}-10))
+    local response=${response:9:$len}
+    local suc_msg=$(echo $response | jq -r '.suc_msg')
     if [ "$suc_msg" != "login_ok" ]; then
         log_error "$suc_msg"
         exit 1
@@ -131,7 +127,7 @@ login() {
 }
 
 logout() {
-    source $SCRIPT_DIR/.env
+    [ -f "$SCRIPT_DIR/.env" ] && source "$SCRIPT_DIR/.env"
     check_user
     log_debug "begin logout"
     local response=$(curl -s -X POST "$AUTH4_LOG_URL" \
