@@ -68,3 +68,11 @@ export LOG_LEVEL=debug # default info
 -   [某校园网认证api分析](https://www.ciduid.top/2022/0706/school-network-auth/)
 -   [tunet-python](https://github.com/yuantailing/tunet-python/)
 -   [GoAuthing](https://github.com/z4yx/GoAuthing)
+
+## Change Log
+
+### v0.2.0
+
+- 针对校园网 2025-01-15 的升级, 更新了获取 ac_id 的逻辑
+- 针对校园网 2025-01-15 的升级, 更新了 whoami 查询的逻辑
+- 将 `tunet_bash.sh` 安装为 `tunet_bash`
