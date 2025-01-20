@@ -72,9 +72,9 @@ fetch_challenge() {
     fi
     local AUTH_CHALLENGE_URL=$([ $ipv == "6" ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
     local res=$(curl -s "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
-    local len=$((${#res}-10))
-    local res=${res:9:$len}
-    local challenge=$(echo $res | jq -r '.challenge')
+    local REGEX_CHALLENGE='"challenge":"([^"]+)"'
+    [[ $res =~ $REGEX_CHALLENGE ]]
+    local challenge=${BASH_REMATCH[1]}
     echo $challenge
 }
 
@@ -84,13 +84,7 @@ gen_hmacmd5() {
 
 post_info() {
     local challenge=$1
-    local json=$(jq -n \
-        --arg username $USERNAME \
-        --arg password $PASSWORD \
-        --arg ip "" \
-        --arg acid "$2" \
-        --arg enc_ver "srun_bx1" \
-        '{acid:$acid,enc_ver:$enc_ver,ip: $ip,password:$password,username:$username}')
+    local json="{\"acid\":\"$2\",\"enc_ver\":\"srun_bx1\",\"ip\":\"\",\"password\":\"$PASSWORD\",\"username\":\"$USERNAME\"}"
     echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g' > $SCRIPT_DIR/data.txt
     log_debug "encoded_json: $($SCRIPT_DIR/.tea $challenge $SCRIPT_DIR/data.txt $SCRIPT_DIR/encoded_output.bin)" # note that tea also writes to stdout, which will pop up in the output
     echo $(base64 $SCRIPT_DIR/encoded_output.bin | tr -d '\n' | tr \
@@ -134,9 +128,9 @@ login() {
         --data-urlencode "chksum=$checksum" \
         --data-urlencode "callback=callback")
     log_debug "response: $response"
-    local len=$((${#response}-10))
-    local response=${response:9:$len}
-    local suc_msg=$(echo $response | jq -r '.suc_msg')
+    local REGEX_SUC_MSG='"suc_msg":"([^"]+)"'
+    [[ $response =~ $REGEX_SUC_MSG ]]
+    local suc_msg=${BASH_REMATCH[1]}
     if [ "$suc_msg" != "login_ok" ]; then
         log_error "$suc_msg"
         exit 1
@@ -165,12 +159,14 @@ logout() {
         --data-urlencode "username=$USERNAME" \
         --data-urlencode "callback=callback")
     log_debug "response: $response"
-    local len=$((${#response}-10))
-    local response=${response:9:$len}
-    local suc_msg=$(echo $response | jq -r '.error')
+    local REGEX_SUC_MSG='"error":"([^"]+)"'
+    [[ $response =~ $REGEX_SUC_MSG ]]
+    local suc_msg=${BASH_REMATCH[1]}
     log_info "$suc_msg"
     if [ "$suc_msg" != "ok" ]; then
-        local error_msg=$(echo $response | jq -r '.error_msg')
+        local REGEX_ERROR_MSG='"error_msg":"([^"]+)"'
+        [[ $response =~ $REGEX_ERROR_MSG ]]
+        local error_msg=${BASH_REMATCH[1]}
         log_error "$error_msg"
         exit 1
     else
