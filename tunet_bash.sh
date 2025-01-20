@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
-AUTH4_AC_ID_DETECT="https://auth4.tsinghua.edu.cn/ac_detect.php?ac_id=1"
+AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info" 
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
-REDIRECT_URI="http://www.tsinghua.edu.cn/"
-REGEX_AC_ID='location\.href="http://auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
+REDIRECT_URI="http://info.tsinghua.edu.cn/"
+REGEX_AC_ID='URL=https://auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 LOG_LEVEL="${LOG_LEVEL}"
@@ -45,7 +45,7 @@ log_info() {
 fetch_ac_id() {
     log_debug "fetch ac_id"
     local res=$(curl --cookie $SCRIPT_DIR/cookies.txt --cookie-jar $SCRIPT_DIR/cookies.txt -s "$REDIRECT_URI")
-    [[ $(echo $res) =~ $REGEX_AC_ID ]]
+    [[ $res =~ $REGEX_AC_ID ]]
     local ac_id=${BASH_REMATCH[1]}
     if [ -z "$ac_id" ]; then
         log_debug "ac_id not found, using 1 as default"
@@ -153,7 +153,7 @@ logout() {
 }
 
 whoami() {
-    local user=$(curl -s --location $AUTH4_AC_ID_DETECT --dump-header - | sed -n 's/.*username=\([^&]*\).*/\1/p')
+    local user=$(curl -s $AUTH4_USER_INFO | cut -d',' -f1)
     if [ -z "$user" ]; then
         log_error "not logged in"
         exit 1

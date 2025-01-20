@@ -28,19 +28,19 @@ make PREFIX=/usr/local/bin/tunet_bash install
 export TUNET_USERNAME=<your username>
 export TUNET_PASSWORD=<your password>
 export LOG_LEVEL=debug # default info
-./tunet_bash.sh login
+./tunet_bash login
 ```
 
 或者, 也可以将用户名和密码写入文件夹所在的 `.env` 文件中, 这一过程可以通过以下命令完成
 
 ```sh
-./tunet_bash.sh config
+./tunet_bash config
 ```
 
 如果查询当前登入用户, 可以使用
 
 ```sh
-./tunet_bash.sh whoami
+./tunet_bash whoami
 ```
 
 ## 功能

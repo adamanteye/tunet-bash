@@ -14,7 +14,8 @@ all: $(TARGET)
 install: $(TARGET) $(MAKEFILE_DIR)tunet_bash.sh
 	@echo "Installing to $(PREFIX)..."
 	@mkdir -p $(PREFIX)
-	cp $(TARGET) $(MAKEFILE_DIR)tunet_bash.sh $(PREFIX)
+	cp $(TARGET) $(PREFIX)
+	cp $(MAKEFILE_DIR)tunet_bash.sh $(PREFIX)/tunet_bash
 	@echo "Installed to $(PREFIX)"
 
 $(TARGET): $(SRC)
