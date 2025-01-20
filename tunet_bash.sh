@@ -49,6 +49,9 @@ fetch_ac_id() {
     local res=$(curl -s "$REDIRECT_URI")
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
+    if [ -z "$ipv" ]; then
+        ipv="4"
+    fi
     log_debug "ip version $ipv"
     local ac_id=${BASH_REMATCH[2]}
     if [ -z "$ac_id" ]; then
@@ -64,6 +67,9 @@ fetch_challenge() {
     local res=$(curl -s "$REDIRECT_URI")
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
+    if [ -z "$ipv" ]; then
+        ipv="4"
+    fi
     local AUTH_CHALLENGE_URL=$([ $ipv == "6" ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
     local res=$(curl -s "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
     local len=$((${#res}-10))
@@ -111,6 +117,9 @@ login() {
     local res=$(curl -s "$REDIRECT_URI")
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
+    if [ -z "$ipv" ]; then
+        ipv="4"
+    fi
     local AUTH_LOG_URL=$([ "$ipv" == "6" ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
     local response=$(curl -s -X POST "$AUTH_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
@@ -144,6 +153,9 @@ logout() {
     local res=$(curl -s "$REDIRECT_URI")
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
+    if [ -z "$ipv" ]; then
+        ipv="4"
+    fi
     local AUTH_LOG_URL=$([ "$ipv" == "6" ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
     local response=$(curl -s -X POST "$AUTH_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
