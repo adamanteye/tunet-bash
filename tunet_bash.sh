@@ -3,8 +3,10 @@
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info" 
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
+AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
+AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
 REDIRECT_URI="http://info.tsinghua.edu.cn/"
-REGEX_AC_ID='URL=https://auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
+REGEX_AC_ID='//auth([46])\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 LOG_LEVEL="${LOG_LEVEL}"
@@ -44,9 +46,11 @@ log_info() {
 
 fetch_ac_id() {
     log_debug "fetch ac_id"
-    local res=$(curl --cookie $SCRIPT_DIR/cookies.txt --cookie-jar $SCRIPT_DIR/cookies.txt -s "$REDIRECT_URI")
+    local res=$(curl -s "$REDIRECT_URI")
     [[ $res =~ $REGEX_AC_ID ]]
-    local ac_id=${BASH_REMATCH[1]}
+    ipv=${BASH_REMATCH[1]}
+    log_debug "ip version $ipv"
+    local ac_id=${BASH_REMATCH[2]}
     if [ -z "$ac_id" ]; then
         log_debug "ac_id not found, using 1 as default"
         echo "1"
@@ -57,7 +61,11 @@ fetch_ac_id() {
 
 fetch_challenge() {
     log_debug "fetch challenge"
-    local res=$(curl --cookie $SCRIPT_DIR/cookies.txt --cookie-jar $SCRIPT_DIR/cookies.txt -s "$AUTH4_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
+    local res=$(curl -s "$REDIRECT_URI")
+    [[ $res =~ $REGEX_AC_ID ]]
+    ipv=${BASH_REMATCH[1]}
+    local AUTH_CHALLENGE_URL=$([ $ipv == "6" ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
+    local res=$(curl -s "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
     local len=$((${#res}-10))
     local res=${res:9:$len}
     local challenge=$(echo $res | jq -r '.challenge')
@@ -89,7 +97,6 @@ login() {
     [ -f "$SCRIPT_DIR/.env" ] && source "$SCRIPT_DIR/.env"
     check_user
     log_debug "begin login"
-    log_debug "remove cookies $(rm -f $SCRIPT_DIR/cookies.txt)"
     local ac_id=$(fetch_ac_id)
     local challenge=$(fetch_challenge)
     log_debug "challenge: $challenge"
@@ -101,7 +108,11 @@ login() {
     local checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
     log_debug "checksum: $checksum"
     log_debug "make login request"
-    local response=$(curl --cookie $SCRIPT_DIR/cookies.txt --cookie-jar $SCRIPT_DIR/cookies.txt -s -X POST "$AUTH4_LOG_URL" \
+    local res=$(curl -s "$REDIRECT_URI")
+    [[ $res =~ $REGEX_AC_ID ]]
+    ipv=${BASH_REMATCH[1]}
+    local AUTH_LOG_URL=$([ "$ipv" == "6" ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
+    local response=$(curl -s -X POST "$AUTH_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "action=login" \
         --data-urlencode "ac_id=$ac_id" \
@@ -114,7 +125,6 @@ login() {
         --data-urlencode "chksum=$checksum" \
         --data-urlencode "callback=callback")
     log_debug "response: $response"
-    log_debug "remove cookies $(rm -f $SCRIPT_DIR/cookies.txt)"
     local len=$((${#response}-10))
     local response=${response:9:$len}
     local suc_msg=$(echo $response | jq -r '.suc_msg')
@@ -131,7 +141,11 @@ logout() {
     [ -f "$SCRIPT_DIR/.env" ] && source "$SCRIPT_DIR/.env"
     check_user
     log_debug "begin logout"
-    local response=$(curl -s -X POST "$AUTH4_LOG_URL" \
+    local res=$(curl -s "$REDIRECT_URI")
+    [[ $res =~ $REGEX_AC_ID ]]
+    ipv=${BASH_REMATCH[1]}
+    local AUTH_LOG_URL=$([ "$ipv" == "6" ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
+    local response=$(curl -s -X POST "$AUTH_LOG_URL" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "action=logout" \
         --data-urlencode "ac_id=1" \

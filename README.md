@@ -46,7 +46,7 @@ export LOG_LEVEL=debug # default info
 ## 功能
 
 -   [x] Auth 4
--   [ ] Auth 6
+-   [x] Auth 6
 -   [ ] Net
 
 -   [x] 登入登出
@@ -70,6 +70,10 @@ export LOG_LEVEL=debug # default info
 -   [GoAuthing](https://github.com/z4yx/GoAuthing)
 
 ## Change Log
+
+### v0.2.1
+
+- 修复有线网 auth6 跳转
 
 ### v0.2.0
 
