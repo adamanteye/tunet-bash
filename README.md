@@ -58,6 +58,9 @@ export LOG_LEVEL=debug # default info
 -   bash
 -   openssl
 -   curl
+
+## 编译依赖
+
 -   make
 -   clang++ 或 g++
 
@@ -70,6 +73,14 @@ export LOG_LEVEL=debug # default info
 -   [GoAuthing](https://github.com/z4yx/GoAuthing)
 
 ## Change Log
+
+### v0.2.3
+
+- 不再依赖 jq 解析 json
+
+### v0.2.2
+
+- 修复了未登录下没有设置 v4 或 v6 的问题
 
 ### v0.2.1
 
