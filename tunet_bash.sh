@@ -8,7 +8,8 @@ AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
 REDIRECT_URI="http://info.tsinghua.edu.cn/"
 REGEX_AC_ID='//auth([46])\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
-SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+TEA="$(dirname "${BASH_SOURCE[0]}")/../share/tunet_bash/tunet_bash_tea"
+CACHE_DIR="$HOME/.cache/tunet_bash"
 LOG_LEVEL="${LOG_LEVEL}"
 
 [ -z "$LOG_LEVEL" ] && LOG_LEVEL="info"
@@ -85,16 +86,16 @@ gen_hmacmd5() {
 post_info() {
     local challenge=$1
     local json="{\"acid\":\"$2\",\"enc_ver\":\"srun_bx1\",\"ip\":\"\",\"password\":\"$PASSWORD\",\"username\":\"$USERNAME\"}"
-    echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g' > $SCRIPT_DIR/data.txt
-    log_debug "encoded_json: $($SCRIPT_DIR/.tea $challenge $SCRIPT_DIR/data.txt $SCRIPT_DIR/encoded_output.bin)" # note that tea also writes to stdout, which will pop up in the output
-    echo $(base64 $SCRIPT_DIR/encoded_output.bin | tr -d '\n' | tr \
+    echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g' > $CACHE_DIR/data.txt
+    log_debug "encoded_json: $($TEA $challenge $CACHE_DIR/data.txt $CACHE_DIR/encoded_output.bin)" # note that tea also writes to stdout, which will pop up in the output
+    echo $(base64 $CACHE_DIR/encoded_output.bin | tr -d '\n' | tr \
        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
        'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
-    rm -f $SCRIPT_DIR/data.txt $SCRIPT_DIR/encoded_output.bin
+    rm -f $CACHE_DIR/data.txt $CACHE_DIR/encoded_output.bin
 }
 
 login() {
-    [ -f "$SCRIPT_DIR/.env" ] && source "$SCRIPT_DIR/.env"
+    [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
     check_user
     log_debug "begin login"
     local ac_id=$(fetch_ac_id)
@@ -141,7 +142,7 @@ login() {
 }
 
 logout() {
-    [ -f "$SCRIPT_DIR/.env" ] && source "$SCRIPT_DIR/.env"
+    [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
     check_user
     log_debug "begin logout"
     local res=$(curl -s "$REDIRECT_URI")
@@ -195,20 +196,22 @@ set_config() {
         read -s -p "password: " PASSWORD
         echo
     done
-    echo "export TUNET_USERNAME=$USERNAME" > $SCRIPT_DIR/.env
-    echo "export TUNET_PASSWORD=$PASSWORD" >> $SCRIPT_DIR/.env
-    chmod 600 $SCRIPT_DIR/.env
+    echo "export TUNET_USERNAME=$USERNAME" > $CACHE_DIR/passwd
+    echo "export TUNET_PASSWORD=$PASSWORD" >> $CACHE_DIR/passwd
+    chmod 600 $CACHE_DIR/passwd
 }
 
-if [ "$1" == "login" ]; then
+mkdir -p $CACHE_DIR
+
+if [ "$1" == "--login" ]; then
     login
-elif [ "$1" == "logout" ]; then
+elif [ "$1" == "--logout" ]; then
     logout
-elif [ "$1" == "whoami" ]; then
+elif [ "$1" == "--whoami" ]; then
     whoami
-elif [ "$1" == "config" ]; then
+elif [ "$1" == "--config" ]; then
     set_config
 else
-    echo "Usage: $0 login | logout | whoami | config"
+    echo "Usage: $0 --login | --logout | --whoami | --config"
     exit 1
 fi

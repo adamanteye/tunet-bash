@@ -11,16 +11,14 @@
 
 ```sh
 make all
-make install # default to $HOME/.tunet_bash
+make install # default to $HOME/.local
 ```
 
 或者安装到自定义路径
 
 ```sh
-make PREFIX=/usr/local/bin/tunet_bash install
+make PREFIX=/usr/local install
 ```
-
-注意, tunet_bash 需要在安装目录下创建临时文件, 请确保安装目录有写入权限.
 
 ### 命令
 
@@ -28,19 +26,19 @@ make PREFIX=/usr/local/bin/tunet_bash install
 export TUNET_USERNAME=<your username>
 export TUNET_PASSWORD=<your password>
 export LOG_LEVEL=debug # default info
-./tunet_bash login
+./tunet_bash --login
 ```
 
-或者, 也可以将用户名和密码写入文件夹所在的 `.env` 文件中, 这一过程可以通过以下命令完成
+或者, 也可以将用户名和密码写入 `$HOME/.cache/tunet_bash/passwd` 文件中, 这一过程可以通过以下命令完成
 
 ```sh
-./tunet_bash config
+./tunet_bash --config
 ```
 
 如果查询当前登入用户, 可以使用
 
 ```sh
-./tunet_bash whoami
+./tunet_bash --whoami
 ```
 
 ## 功能
@@ -74,13 +72,19 @@ export LOG_LEVEL=debug # default info
 
 ## Change Log
 
+### v0.3.0
+
+- 更改命令格式
+- 更改安装路径
+- 增加 man 手册页
+
 ### v0.2.3
 
 - 不再依赖 jq 解析 json
 
 ### v0.2.2
 
-- 修复了未登录下没有设置 v4 或 v6 的问题
+- 修复未登录下没有设置 v4 或 v6 的问题
 
 ### v0.2.1
 
@@ -88,6 +92,6 @@ export LOG_LEVEL=debug # default info
 
 ### v0.2.0
 
-- 针对校园网 2025-01-15 的升级, 更新了获取 ac_id 的逻辑
-- 针对校园网 2025-01-15 的升级, 更新了 whoami 查询的逻辑
+- 针对校园网 2025-01-15 的升级, 更新获取 ac_id 的逻辑
+- 针对校园网 2025-01-15 的升级, 更新 whoami 查询的逻辑
 - 将 `tunet_bash.sh` 安装为 `tunet_bash`

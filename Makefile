@@ -1,25 +1,32 @@
-.PHONY: all clean install
+.PHONY: all clean install man
 
 SHELL := /bin/bash
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-CC := $(shell if command -v clang++ &> /dev/null; then echo clang++; else echo g++; fi)
+CXX := $(shell if command -v clang++ &> /dev/null; then echo clang++; else echo g++; fi)
 CFLAGS := -march=native -O2 -pipe -flto -Wall
 
-TARGET := $(MAKEFILE_DIR).tea
+TARGET := $(MAKEFILE_DIR)tunet_bash_tea
 SRC := $(MAKEFILE_DIR)tea.cpp
-PREFIX := $(HOME)/.tunet_bash
+PREFIX := $(HOME)/.local
 
 all: $(TARGET)
 
 install: $(TARGET) $(MAKEFILE_DIR)tunet_bash.sh
-	@echo "Installing to $(PREFIX)..."
-	@mkdir -p $(PREFIX)
-	cp $(TARGET) $(PREFIX)
-	cp $(MAKEFILE_DIR)tunet_bash.sh $(PREFIX)/tunet_bash
-	@echo "Installed to $(PREFIX)"
+	@mkdir -p $(PREFIX)/share/tunet_bash
+	@cp $(TARGET) $(PREFIX)/share/tunet_bash
+	@mkdir -p $(PREFIX)/bin
+	@cp $(MAKEFILE_DIR)tunet_bash.sh $(PREFIX)/bin/tunet_bash
+	@chmod 755 $(PREFIX)/bin/tunet_bash
+	@echo "installed to $(PREFIX)"
 
 $(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
+	$(CXX) $(CFLAGS) $(SRC) -o $(TARGET)
+
+man: $(MAKEFILE_DIR)tunet_bash.1.gz
+
+$(MAKEFILE_DIR)tunet_bash.1.gz: $(MAKEFILE_DIR)man/tunet_bash.1.scd
+	@scdoc < $(MAKEFILE_DIR)man/tunet_bash.1.scd > $(MAKEFILE_DIR)tunet_bash.1
+	@gzip $(MAKEFILE_DIR)tunet_bash.1
 
 clean:
 	rm -f $(TARGET)
