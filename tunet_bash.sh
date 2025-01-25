@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
-AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info" 
+AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
@@ -80,17 +80,17 @@ fetch_challenge() {
 }
 
 gen_hmacmd5() {
-    echo -n $1 | openssl dgst -md5 -hmac "" | sed 's/^.* //'
+    echo -n $1 | openssl dgst -md5 -hmac "" -r | cut -d ' ' -f 1
 }
 
 post_info() {
     local challenge=$1
     local json="{\"acid\":\"$2\",\"enc_ver\":\"srun_bx1\",\"ip\":\"\",\"password\":\"$PASSWORD\",\"username\":\"$USERNAME\"}"
-    echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g' > $CACHE_DIR/data.txt
+    echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g' >$CACHE_DIR/data.txt
     log_debug "encoded_json: $($TEA $challenge $CACHE_DIR/data.txt $CACHE_DIR/encoded_output.bin)" # note that tea also writes to stdout, which will pop up in the output
     echo $(base64 $CACHE_DIR/encoded_output.bin | tr -d '\n' | tr \
-       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
-       'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
+        'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
     rm -f $CACHE_DIR/data.txt $CACHE_DIR/encoded_output.bin
 }
 
@@ -106,7 +106,7 @@ login() {
     local password_md5=$(gen_hmacmd5 $challenge)
     log_debug "password_md5: {MD5}$password_md5"
     local checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
-    local checksum=$(echo -n $checksum | openssl sha1 -hex | sed 's/SHA1(stdin)= //g')
+    local checksum=$(echo -n $checksum | openssl sha1 -hex -r | cut -d ' ' -f 1)
     log_debug "checksum: $checksum"
     log_debug "make login request"
     local res=$(curl -s "$REDIRECT_URI")
@@ -196,8 +196,8 @@ set_config() {
         read -s -p "password: " PASSWORD
         echo
     done
-    echo "export TUNET_USERNAME=$USERNAME" > $CACHE_DIR/passwd
-    echo "export TUNET_PASSWORD=$PASSWORD" >> $CACHE_DIR/passwd
+    echo "export TUNET_USERNAME=$USERNAME" >$CACHE_DIR/passwd
+    echo "export TUNET_PASSWORD=$PASSWORD" >>$CACHE_DIR/passwd
     chmod 600 $CACHE_DIR/passwd
 }
 
