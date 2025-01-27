@@ -8,7 +8,7 @@ AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
 REDIRECT_URL="http://info.tsinghua.edu.cn/"
 REGEX_AC_ID='//auth([46])\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
-TEA="$(dirname "${BASH_SOURCE[0]}")/../share/tunet_bash/tunet_bash_tea"
+TEA="$(dirname "${BASH_SOURCE[0]}")/../share/tunet_bash/tea.sh"
 CACHE_DIR="$HOME/.cache/tunet_bash"
 LOG_LEVEL=$LOG_LEVEL
 
@@ -86,12 +86,10 @@ gen_hmacmd5() {
 post_info() {
     local challenge=$1
     local json="{\"acid\":\"$2\",\"enc_ver\":\"srun_bx1\",\"ip\":\"\",\"password\":\"$PASSWORD\",\"username\":\"$USERNAME\"}"
-    echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g' >$CACHE_DIR/data.txt
-    log_debug "encoded_json: $($TEA $challenge $CACHE_DIR/data.txt $CACHE_DIR/encoded_output.bin)" # note that tea also writes to stdout, which will pop up in the output
-    echo $(base64 $CACHE_DIR/encoded_output.bin | tr -d '\n' | tr \
+    local data=$(echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g')
+    echo $($TEA $challenge $data | base64 | tr -d '\n' | tr \
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
         'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
-    rm -f $CACHE_DIR/data.txt $CACHE_DIR/encoded_output.bin
 }
 
 login() {

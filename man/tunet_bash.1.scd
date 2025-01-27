@@ -2,7 +2,7 @@ tunet_bash(1)
 
 # NAME
 
-tunet_bash - Tsinghua University authentication script
+tunet_bash - Tsinghua University network authentication script
 
 # SYNOPSIS
 
@@ -10,14 +10,17 @@ tunet_bash - Tsinghua University authentication script
 
 # DESCRIPTION
 
-*tunet_bash* is an authentication script for Tsinghua network. It is written in bash and C++ with minimal dependencies.
+*tunet_bash* is an authentication script for Tsinghua network.
+It is written in bash with minimal dependencies.
 
 # OPTIONS
 
 *--config*
-	Specify username and password for account in use. They will be written to *$HOME/.cache/tunet_bash/passwd*.
+	Specify the username and password for the account in use.
+	They will be written to _$HOME/.cache/tunet_bash/passwd_.
 
-	Once set, username and password will be read when login/logout.
+	Once set, the username and password will be used for login
+	and logout operations.
 
 *--login*
 	Make login request.
@@ -27,3 +30,29 @@ tunet_bash - Tsinghua University authentication script
 
 *--whoami*
 	Query account username currently online.
+
+	Can also be used with a Tsinghua-Secure connection.
+
+# ENVIRONMENT
+
+*LOG_LEVEL*
+	Possible values are _debug_ or _info_.
+
+	However, error messages will always be printed.
+
+*TUNET_USERNAME*
+	If set, the username defined in _$HOME/.cache/tunet_bash/passwd_
+	will be overridden.
+
+*TUNET_PASSWORD*
+	If set, the password defined in _$HOME/.cache/tunet_bash/passwd_
+	will be overridden.
+
+# FILES
+
+$HOME/.cache/tunet_bash/passwd
+
+# AUTHOR
+
+Maintained by adamanteye <ada@adamanteye.cc>. Up-to-date sources are
+available at _https://github.com/adamanteye/tunet_bash_.

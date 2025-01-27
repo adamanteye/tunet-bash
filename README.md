@@ -2,22 +2,20 @@
 
 ## 特点
 
--   主要功能通过 Bash 实现, 适合 Live CD 引导装机, 小主机登录维持等场景
--   因为 srun 的自定义签名算法用 Bash 实现较为困难, 所以这一部分使用 C++ 编写
+功能通过 Bash 实现, 适合 Live CD 引导装机, 小主机登录维持等场景.
 
 ## 使用指南
 
 ### 安装
 
 ```sh
-make all
 make install # default to $HOME/.local
 ```
 
-或者安装到自定义路径
+或者安装到自定义路径:
 
 ```sh
-make PREFIX=/usr/local install
+sudo make PREFIX=/usr/local install
 ```
 
 ### 命令
@@ -26,51 +24,59 @@ make PREFIX=/usr/local install
 export TUNET_USERNAME=<your username>
 export TUNET_PASSWORD=<your password>
 export LOG_LEVEL=debug # default info
-./tunet_bash --login
+tunet_bash --login
 ```
 
-或者, 也可以将用户名和密码写入 `$HOME/.cache/tunet_bash/passwd` 文件中, 这一过程可以通过以下命令完成
+或者, 也可以将用户名和密码写入 `$HOME/.cache/tunet_bash/passwd` 文件中, 这一过程可以通过以下命令完成:
 
 ```sh
-./tunet_bash --config
+tunet_bash --config
 ```
 
-如果查询当前登入用户, 可以使用
+如果查询当前登入用户, 可以使用:
 
 ```sh
-./tunet_bash --whoami
+tunet_bash --whoami
 ```
 
 ## 功能
 
--   [x] Auth 4
--   [x] Auth 6
--   [ ] Net
+- [x] Auth 4
+- [x] Auth 6
+- [ ] Net
 
--   [x] 登入登出
--   [x] 当前用户查询
--   [ ] 历史流量查询
+- [x] 登入登出
+- [x] 当前用户查询
+- [ ] 历史流量查询
 
 ## 依赖
 
--   bash
--   openssl
--   curl
+- bash
+- openssl
+- curl
 
-## 编译依赖
+## 构建依赖
 
--   make
--   clang++ 或 g++
+- make
+- scdoc
 
-## 参考与致谢
+## 参考
 
--   [tunet-rust](https://github.com/Berrysoft/tunet-rust)
--   [清华校园网自动连接脚本](https://github.com/WhymustIhaveaname/TsinghuaTunet)
--   [某校园网认证api分析](https://www.ciduid.top/2022/0706/school-network-auth/)
--   [tunet-python](https://github.com/yuantailing/tunet-python/)
--   [GoAuthing](https://github.com/z4yx/GoAuthing)
+以下项目或博客为实现 bash 版本的认证逻辑提供了参考:
+
+- [tunet-rust](https://github.com/Berrysoft/tunet-rust)
+- [清华校园网自动连接脚本](https://github.com/WhymustIhaveaname/TsinghuaTunet)
+- [某校园网认证api分析](https://www.ciduid.top/2022/0706/school-network-auth/)
+- [tunet-python](https://github.com/yuantailing/tunet-python/)
+- [GoAuthing](https://github.com/z4yx/GoAuthing)
+- [Tiny Encryption Algorithm - Wikipedia](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm)
+- [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
 ## Change Log
+
+### v1.0.0
+
+- 将 tea.cpp 部分换为 bash 实现
 
 ### v0.3.0
 
