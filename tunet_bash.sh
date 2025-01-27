@@ -5,14 +5,14 @@ AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
-REDIRECT_URI="http://info.tsinghua.edu.cn/"
+REDIRECT_URL="http://info.tsinghua.edu.cn/"
 REGEX_AC_ID='//auth([46])\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
 TEA="$(dirname "${BASH_SOURCE[0]}")/../share/tunet_bash/tunet_bash_tea"
 CACHE_DIR="$HOME/.cache/tunet_bash"
-LOG_LEVEL="${LOG_LEVEL}"
+LOG_LEVEL=$LOG_LEVEL
 
-[ -z "$LOG_LEVEL" ] && LOG_LEVEL="info"
+[ -z $LOG_LEVEL ] && LOG_LEVEL="info"
 
 log_date() {
     echo "[$(date --rfc-3339 s)]"
@@ -23,56 +23,56 @@ log_error() {
 }
 
 check_user() {
-    USERNAME="${TUNET_USERNAME}"
-    PASSWORD="${TUNET_PASSWORD}"
-    if [ -z "$USERNAME" ]; then
+    USERNAME=$TUNET_USERNAME
+    PASSWORD=$TUNET_PASSWORD
+    if [ -z $USERNAME ]; then
         log_error "TUNET_USERNAME is not set"
         exit 1
     fi
-    if [ -z "$PASSWORD" ]; then
+    if [ -z $PASSWORD ]; then
         log_error "TUNET_PASSWORD is not set"
         exit 1
     fi
 }
 
 log_debug() {
-    [ "$LOG_LEVEL" == "debug" ] && echo -e "$(log_date) DEBUG $1" >&2
+    [ $LOG_LEVEL == "debug" ] && echo -e "$(log_date) DEBUG $1" >&2
 }
 
 log_info() {
-    if [ "$LOG_LEVEL" == "info" ] || [ "$LOG_LEVEL" == "debug" ]; then
+    if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ]; then
         echo -e "$(log_date) INFO $1" >&2
     fi
 }
 
 fetch_ac_id() {
     log_debug "fetch ac_id"
-    local res=$(curl -s "$REDIRECT_URI")
+    local res=$(curl -s $REDIRECT_URL)
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
-    if [ -z "$ipv" ]; then
-        ipv="4"
+    if [ -z $ipv ]; then
+        ipv=4
     fi
     log_debug "ip version $ipv"
     local ac_id=${BASH_REMATCH[2]}
-    if [ -z "$ac_id" ]; then
+    if [ -z $ac_id ]; then
         log_debug "ac_id not found, using 1 as default"
         echo "1"
     else
-        echo "$ac_id"
+        echo $ac_id
     fi
 }
 
 fetch_challenge() {
     log_debug "fetch challenge"
-    local res=$(curl -s "$REDIRECT_URI")
+    local res=$(curl -s $REDIRECT_URL)
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
-    if [ -z "$ipv" ]; then
-        ipv="4"
+    if [ -z $ipv ]; then
+        ipv=4
     fi
-    local AUTH_CHALLENGE_URL=$([ $ipv == "6" ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
-    local res=$(curl -s "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
+    local AUTH_CHALLENGE_URL=$([ $ipv == 6 ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
+    local res=$(curl -s $AUTH_CHALLENGE_URL --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
     local REGEX_CHALLENGE='"challenge":"([^"]+)"'
     [[ $res =~ $REGEX_CHALLENGE ]]
     local challenge=${BASH_REMATCH[1]}
@@ -109,14 +109,14 @@ login() {
     local checksum=$(echo -n $checksum | openssl sha1 -hex -r | cut -d ' ' -f 1)
     log_debug "checksum: $checksum"
     log_debug "make login request"
-    local res=$(curl -s "$REDIRECT_URI")
+    local res=$(curl -s $REDIRECT_URL)
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
-    if [ -z "$ipv" ]; then
-        ipv="4"
+    if [ -z $ipv ]; then
+        ipv=4
     fi
-    local AUTH_LOG_URL=$([ "$ipv" == "6" ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
-    local response=$(curl -s -X POST "$AUTH_LOG_URL" \
+    local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
+    local response=$(curl -s -X POST $AUTH_LOG_URL \
         -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "action=login" \
         --data-urlencode "ac_id=$ac_id" \
@@ -133,7 +133,14 @@ login() {
     [[ $response =~ $REGEX_SUC_MSG ]]
     local suc_msg=${BASH_REMATCH[1]}
     if [ "$suc_msg" != "login_ok" ]; then
-        log_error "$suc_msg"
+        if [ -z $suc_msg ]; then
+            local REGEX_ERR_MSG='"error_msg":"([^"]+)"'
+            [[ $response =~ $REGEX_ERR_MSG ]]
+            local err_msg=${BASH_REMATCH[1]}
+            log_error "$err_msg"
+        else
+            log_error "$suc_msg"
+        fi
         exit 1
     else
         log_info "$suc_msg"
@@ -145,14 +152,14 @@ logout() {
     [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
     check_user
     log_debug "begin logout"
-    local res=$(curl -s "$REDIRECT_URI")
+    local res=$(curl -s $REDIRECT_URL)
     [[ $res =~ $REGEX_AC_ID ]]
     ipv=${BASH_REMATCH[1]}
-    if [ -z "$ipv" ]; then
-        ipv="4"
+    if [ -z $ipv ]; then
+        ipv=4
     fi
-    local AUTH_LOG_URL=$([ "$ipv" == "6" ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
-    local response=$(curl -s -X POST "$AUTH_LOG_URL" \
+    local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
+    local response=$(curl -s -X POST $AUTH_LOG_URL \
         -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "action=logout" \
         --data-urlencode "ac_id=1" \
@@ -163,7 +170,6 @@ logout() {
     local REGEX_SUC_MSG='"error":"([^"]+)"'
     [[ $response =~ $REGEX_SUC_MSG ]]
     local suc_msg=${BASH_REMATCH[1]}
-    log_info "$suc_msg"
     if [ "$suc_msg" != "ok" ]; then
         local REGEX_ERROR_MSG='"error_msg":"([^"]+)"'
         [[ $response =~ $REGEX_ERROR_MSG ]]
@@ -171,28 +177,33 @@ logout() {
         log_error "$error_msg"
         exit 1
     else
+        log_info "$suc_msg"
         exit 0
     fi
 }
 
 whoami() {
-    local user=$(curl -s $AUTH4_USER_INFO | cut -d',' -f1)
-    if [ -z "$user" ]; then
-        log_error "not logged in"
+    local res=$(curl -s $AUTH4_USER_INFO)
+    log_debug "res: $res"
+    local cnt=$(echo $res | tr ',' '\n' | wc -l)
+    log_debug "cnt: $cnt"
+    local user=$(echo $res | cut -d ',' -f1)
+    if [ $cnt != 22 ]; then
+        log_error $user
         exit 1
     else
-        log_info "$user"
+        log_info $user
         exit 0
     fi
 }
 
 set_config() {
-    USERNAME="${TUNET_USERNAME}"
-    PASSWORD="${TUNET_PASSWORD}"
-    while [[ -z "$USERNAME" ]]; do
+    USERNAME=$TUNET_USERNAME
+    PASSWORD=$TUNET_PASSWORD
+    while [[ -z $USERNAME ]]; do
         read -p "username: " USERNAME
     done
-    while [[ -z "$PASSWORD" ]]; do
+    while [[ -z $PASSWORD ]]; do
         read -s -p "password: " PASSWORD
         echo
     done
@@ -203,13 +214,13 @@ set_config() {
 
 mkdir -p $CACHE_DIR
 
-if [ "$1" == "--login" ]; then
+if [ $1 == "--login" ]; then
     login
-elif [ "$1" == "--logout" ]; then
+elif [ $1 == "--logout" ]; then
     logout
-elif [ "$1" == "--whoami" ]; then
+elif [ $1 == "--whoami" ]; then
     whoami
-elif [ "$1" == "--config" ]; then
+elif [ $1 == "--config" ]; then
     set_config
 else
     echo "Usage: $0 --login | --logout | --whoami | --config"
