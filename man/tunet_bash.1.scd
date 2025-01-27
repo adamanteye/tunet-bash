@@ -15,20 +15,20 @@ It is written in bash with minimal dependencies.
 
 # OPTIONS
 
-*--config*
+*-c*,*--config*
 	Specify the username and password for the account in use.
 	They will be written to _$HOME/.cache/tunet_bash/passwd_.
 
 	Once set, the username and password will be used for login
 	and logout operations.
 
-*--login*
+*-l*,*--login*
 	Make login request.
 
-*--logout*
+*-o*,*--logout*
 	Make logout request.
 
-*--whoami*
+*-w*,*--whoami*
 	Query account username currently online.
 
 	Can also be used with a Tsinghua-Secure connection.

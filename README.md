@@ -74,9 +74,14 @@ tunet_bash --whoami
 
 ## Change Log
 
+### v1.0.1
+
+- 合并 `tea.sh`, `tunet_bash.sh`
+- 短选项支持
+
 ### v1.0.0
 
-- 将 tea.cpp 部分换为 bash 实现
+- 将 `tea.cpp` 部分换为 bash 实现
 
 ### v0.3.0
 
