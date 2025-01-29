@@ -307,7 +307,7 @@ set_config() {
 
 mkdir -p $CACHE_DIR
 script_name=$(basename "$0")
-args=$(getopt -o c:l:o:w:v --long config:,login,logout,whoami,verbose,v4,v6 -n "$script_name" -- "$@")
+args=$(getopt -o c,i,o,w,v --long config,login,logout,whoami,verbose,v4,v6 -n "$script_name" -- "$@")
 if [ $? != 0 ]; then exit 1; fi
 while true; do
     case "$1" in
@@ -315,7 +315,7 @@ while true; do
         set_config
         exit 0
         ;;
-    -l | --login)
+    -i | --login)
         op="login"
         shift
         ;;

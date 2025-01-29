@@ -50,9 +50,11 @@ $ tunet_bash --login --v6
 
 ```sh
 $ tunet_bash --config
+username: yangzheh22
+password:
 ```
 
-此后将使用已设定的用户名和密码, 环境变量可以覆盖文件中的账户.
+此后将使用已设定的用户名和密码, 环境变量可以覆盖文件中的用户名和密码.
 
 如果查询当前登入用户, 可以使用:
 
@@ -69,6 +71,8 @@ LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SU
 ```
 
 `TRAFFIC_IN`, `TRAFFIC_OUT`, `TRAFFIC_SUM` 统计当前登陆会话的流量, `TRAFFIC_TOTAL` 统计本月总流量.
+
+详细说明请查看手册.
 
 ## 功能
 
@@ -105,6 +109,10 @@ LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SU
 
 ## Change Log
 
+### v1.1.1
+
+- 修复短选项解析错误
+
 ### v1.1.0
 
 - 在线时间, 流量等查询
@@ -117,7 +125,7 @@ LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SU
 
 ### v1.0.0
 
-- 将 `tea.cpp` 部分换为 bash 实现
+- 将 `tea.cpp` 部分换为 Bash 实现
 
 ### v0.3.0
 

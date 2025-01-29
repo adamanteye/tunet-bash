@@ -22,7 +22,7 @@ It is written in bash with minimal dependencies.
 
 	Once configured, these credentials will be used for login and logout operations.
 
-*-l*,*--login*
+*-i*,*--login*
 	Make a login request.
 
 	Defaults to auth4 unless *--v4* or *--v6* is specified.
