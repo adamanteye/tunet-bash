@@ -6,7 +6,11 @@
 
 ## 使用指南
 
-### 安装
+### 从包管理器安装
+
+- Arch Linux: [AUR - tunet_bash](https://aur.archlinux.org/packages/tunet_bash)
+
+### 从源代码安装
 
 ```sh
 $ make install # default to $HOME/.local
