@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+set -o pipefail
+
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
@@ -12,10 +14,13 @@ REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 KEY_ARRAY_LENGTH=4
 
 CACHE_DIR="$HOME/.cache/tunet_bash"
-LOG_LEVEL=$LOG_LEVEL
+LOG_LEVEL=${LOG_LEVEL:-"info"}
 
 key_array=()
 data_array=()
+
+verbose=0
+ipv=4
 
 fill_key() {
     local key="$1"
@@ -99,8 +104,6 @@ tea() {
     encode
 }
 
-[ -z $LOG_LEVEL ] && LOG_LEVEL="info"
-
 log_date() {
     echo "[$(date --rfc-3339 s)]"
 }
@@ -111,11 +114,15 @@ log_error() {
 
 check_user() {
     USERNAME=$TUNET_USERNAME
-    PASSWORD=$TUNET_PASSWORD
     if [ -z $USERNAME ]; then
         log_error "TUNET_USERNAME is not set"
         exit 1
     fi
+
+}
+
+check_pass() {
+    PASSWORD=$TUNET_PASSWORD
     if [ -z $PASSWORD ]; then
         log_error "TUNET_PASSWORD is not set"
         exit 1
@@ -147,7 +154,6 @@ fetch_ac_id() {
 }
 
 fetch_challenge() {
-    local ipv=$1
     log_debug "fetch challenge v$ipv"
     local AUTH_CHALLENGE_URL=$([ $ipv == 6 ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
     local res=$(curl -s $AUTH_CHALLENGE_URL --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
@@ -170,8 +176,11 @@ post_info() {
         'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
 }
 
-login_4_or_6() {
-    local ipv=$1
+login() {
+    [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
+    check_user
+    check_pass
+    log_debug "begin auth$ipv login"
     local ac_id=$(fetch_ac_id)
     local challenge=$(fetch_challenge "$ipv")
     log_debug "challenge: $challenge"
@@ -209,28 +218,17 @@ login_4_or_6() {
         else
             log_error "$suc_msg"
         fi
-        return 1
+        exit 1
     else
         log_info "$suc_msg"
-        return 0
+        exit 0
     fi
 }
 
-login() {
+logout() {
     [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
     check_user
-    local ipv="$1"
-    if [ -z $ipv ]; then
-        local ipv=4
-    fi
-    log_debug "begin auth$ipv login"
-    login_4_or_6 $ipv
-    local res=$?
-    exit $res
-}
-
-logout_4_or_6() {
-    local ipv=$1
+    log_debug "begin auth$ipv logout"
     local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
     local response=$(curl -s -X POST $AUTH_LOG_URL \
         -H "Content-Type: application/x-www-form-urlencoded" \
@@ -255,24 +253,7 @@ logout_4_or_6() {
     fi
 }
 
-logout() {
-    [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
-    check_user
-    local ipv=$1
-    if [ -z $ipv ]; then
-        local ipv=4
-    fi
-    log_debug "begin auth$ipv logout"
-    logout_4_or_6 $ipv
-    local res = $?
-    exit $res
-}
-
 whoami() {
-    local ipv=$1
-    if [ -z $ipv ]; then
-        local ipv=4
-    fi
     local AUTH_USER_INFO=$([ $ipv == 6 ] && echo $AUTH6_USER_INFO || echo $AUTH4_USER_INFO)
     local res=$(curl -s $AUTH_USER_INFO)
     log_debug "res: $res"
@@ -286,17 +267,17 @@ whoami() {
         log_info $user
         if [ $verbose -eq 1 ]; then
             printf "%-27s %-6s %-16s %-17s %-17s %-19s %-s\n" \
-            "LOGIN" "UP(h)" "TRAFFIC_IN(MiB)" "TRAFFIC_OUT(MiB)" \
-            "TRAFFIC_SUM(MiB)" "TRAFFIC_TOTAL(GiB)" "IP"
+                "LOGIN" "UP(h)" "TRAFFIC_IN(MiB)" "TRAFFIC_OUT(MiB)" \
+                "TRAFFIC_SUM(MiB)" "TRAFFIC_TOTAL(GiB)" "IP"
             local login=$(echo $res | cut -d ',' -f2)
             local online=$(echo $res | cut -d ',' -f3)
-            local online=$(( online - login ))
+            local online=$((online - login))
             local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
             local login=$(date -d "@$login" --rfc-3339 s)
             local in=$(echo $res | cut -d ',' -f4)
             local out=$(echo $res | cut -d ',' -f5)
             local tot=$(echo $res | cut -d ',' -f7)
-            local sum=$(( in + out ))
+            local sum=$((in + out))
             local in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
             local out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
             local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
@@ -328,7 +309,6 @@ mkdir -p $CACHE_DIR
 script_name=$(basename "$0")
 args=$(getopt -o c:l:o:w:v --long config:,login,logout,whoami,verbose,v4,v6 -n "$script_name" -- "$@")
 if [ $? != 0 ]; then exit 1; fi
-verbose=0
 while true; do
     case "$1" in
     -c | --config)
@@ -362,7 +342,6 @@ while true; do
     *) break ;;
     esac
 done
-log_debug "verbose: $verbose"
 case $op in
 whoami)
     whoami $ipv
