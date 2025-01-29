@@ -1,12 +1,13 @@
 #!/usr/bin/bash
 
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
-AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
+AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info"
+AUTH6_USER_INFO="https://auth6.tsinghua.edu.cn/cgi-bin/rad_user_info"
 REDIRECT_URL="http://info.tsinghua.edu.cn/"
-REGEX_AC_ID='//auth([46])\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
+REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
 KEY_ARRAY_LENGTH=4
 
@@ -22,16 +23,16 @@ fill_key() {
     for ((i = 0; i < ${#key}; i++)); do
         local char=${key:$i:1}
         local value=$(printf "%d" "'$char")
-        array+=($value)
+        local array+=($value)
     done
     while [ ${#array[@]} -lt 16 ]; do
-        array+=(0)
+        local array+=(0)
     done
     local temp_u32
     for ((i = 0; i < KEY_ARRAY_LENGTH; i++)); do
-        temp_u32=0
+        local temp_u32=0
         for ((j = 0; j < 4; j++)); do
-            temp_u32=$((temp_u32 | (array[$((i * 4 + j))] << (8 * j))))
+            local temp_u32=$((temp_u32 | (array[$((i * 4 + j))] << (8 * j))))
         done
         key_array[i]=$temp_u32
     done
@@ -64,7 +65,7 @@ encode() {
         z=$((z | (data_array[$((n * 4 + i))] << (8 * i))))
     done
     for ((i = 0; i < q; i++)); do
-        d=$((d + 0x9E3779B9))
+        local d=$((d + 0x9E3779B9))
         local e=$(((d >> 2) & 3))
         for ((p = 0; p <= n; p++)); do
             local y_index=$((((p + 1) % (n + 1)) * 4))
@@ -73,17 +74,17 @@ encode() {
                 y=$((y | (data_array[$((y_index + j))] << (8 * j))))
             done
             local m=$(((z >> 5) ^ (y << 2)))
-            m=$((m + ((y >> 3) ^ (z << 4) ^ (d ^ y))))
-            m=$((m + (key_array[$(((p & 3) ^ e))] ^ z)))
+            local m=$((m + ((y >> 3) ^ (z << 4) ^ (d ^ y))))
+            local m=$((m + (key_array[$(((p & 3) ^ e))] ^ z)))
             local m_index=$((p * 4))
             local temp_m=$((data_array[$m_index] | (data_array[$((m_index + 1))] << 8) | (data_array[$((m_index + 2))] << 16) | (data_array[$((m_index + 3))] << 24)))
-            m=$((m + temp_m))
-            m=$((m & 0xFFFFFFFF))
+            local m=$((m + temp_m))
+            local m=$((m & 0xFFFFFFFF))
             data_array[$((m_index + 0))]=$((m & 0xFF))
             data_array[$((m_index + 1))]=$(((m >> 8) & 0xFF))
             data_array[$((m_index + 2))]=$(((m >> 16) & 0xFF))
             data_array[$((m_index + 3))]=$(((m >> 24) & 0xFF))
-            z=$m
+            local z=$m
         done
     done
     for ((i = 0; i < ${#data_array[@]}; i++)); do
@@ -135,28 +136,19 @@ fetch_ac_id() {
     log_debug "fetch ac_id"
     local res=$(curl -s $REDIRECT_URL)
     [[ $res =~ $REGEX_AC_ID ]]
-    ipv=${BASH_REMATCH[1]}
-    if [ -z $ipv ]; then
-        ipv=4
-    fi
-    log_debug "ip version $ipv"
-    local ac_id=${BASH_REMATCH[2]}
+    local ac_id=${BASH_REMATCH[1]}
     if [ -z $ac_id ]; then
         log_debug "ac_id not found, using 1 as default"
         echo "1"
     else
+        log_debug "ac_id: $ac_id"
         echo $ac_id
     fi
 }
 
 fetch_challenge() {
-    log_debug "fetch challenge"
-    local res=$(curl -s $REDIRECT_URL)
-    [[ $res =~ $REGEX_AC_ID ]]
-    ipv=${BASH_REMATCH[1]}
-    if [ -z $ipv ]; then
-        ipv=4
-    fi
+    local ipv=$1
+    log_debug "fetch challenge v$ipv"
     local AUTH_CHALLENGE_URL=$([ $ipv == 6 ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
     local res=$(curl -s $AUTH_CHALLENGE_URL --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
     local REGEX_CHALLENGE='"challenge":"([^"]+)"'
@@ -178,12 +170,10 @@ post_info() {
         'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
 }
 
-login() {
-    [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
-    check_user
-    log_debug "begin login"
+login_4_or_6() {
+    local ipv=$1
     local ac_id=$(fetch_ac_id)
-    local challenge=$(fetch_challenge)
+    local challenge=$(fetch_challenge "$ipv")
     log_debug "challenge: $challenge"
     local info="{SRBX1}$(post_info $challenge $ac_id)"
     log_debug "info: $info"
@@ -193,12 +183,6 @@ login() {
     local checksum=$(echo -n $checksum | openssl sha1 -hex -r | cut -d ' ' -f 1)
     log_debug "checksum: $checksum"
     log_debug "make login request"
-    local res=$(curl -s $REDIRECT_URL)
-    [[ $res =~ $REGEX_AC_ID ]]
-    ipv=${BASH_REMATCH[1]}
-    if [ -z $ipv ]; then
-        ipv=4
-    fi
     local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
     local response=$(curl -s -X POST $AUTH_LOG_URL \
         -H "Content-Type: application/x-www-form-urlencoded" \
@@ -225,23 +209,28 @@ login() {
         else
             log_error "$suc_msg"
         fi
-        exit 1
+        return 1
     else
         log_info "$suc_msg"
-        exit 0
+        return 0
     fi
 }
 
-logout() {
+login() {
     [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
     check_user
-    log_debug "begin logout"
-    local res=$(curl -s $REDIRECT_URL)
-    [[ $res =~ $REGEX_AC_ID ]]
-    ipv=${BASH_REMATCH[1]}
+    local ipv="$1"
     if [ -z $ipv ]; then
-        ipv=4
+        local ipv=4
     fi
+    log_debug "begin auth$ipv login"
+    login_4_or_6 $ipv
+    local res=$?
+    exit $res
+}
+
+logout_4_or_6() {
+    local ipv=$1
     local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
     local response=$(curl -s -X POST $AUTH_LOG_URL \
         -H "Content-Type: application/x-www-form-urlencoded" \
@@ -266,8 +255,26 @@ logout() {
     fi
 }
 
+logout() {
+    [ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
+    check_user
+    local ipv=$1
+    if [ -z $ipv ]; then
+        local ipv=4
+    fi
+    log_debug "begin auth$ipv logout"
+    logout_4_or_6 $ipv
+    local res = $?
+    exit $res
+}
+
 whoami() {
-    local res=$(curl -s $AUTH4_USER_INFO)
+    local ipv=$1
+    if [ -z $ipv ]; then
+        local ipv=4
+    fi
+    local AUTH_USER_INFO=$([ $ipv == 6 ] && echo $AUTH6_USER_INFO || echo $AUTH4_USER_INFO)
+    local res=$(curl -s $AUTH_USER_INFO)
     log_debug "res: $res"
     local cnt=$(echo $res | tr ',' '\n' | wc -l)
     log_debug "cnt: $cnt"
@@ -277,6 +284,27 @@ whoami() {
         exit 1
     else
         log_info $user
+        if [ $verbose -eq 1 ]; then
+            printf "%-27s %-6s %-16s %-17s %-17s %-19s %-s\n" \
+            "LOGIN" "UP(h)" "TRAFFIC_IN(MiB)" "TRAFFIC_OUT(MiB)" \
+            "TRAFFIC_SUM(MiB)" "TRAFFIC_TOTAL(GiB)" "IP"
+            local login=$(echo $res | cut -d ',' -f2)
+            local online=$(echo $res | cut -d ',' -f3)
+            local online=$(( online - login ))
+            local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
+            local login=$(date -d "@$login" --rfc-3339 s)
+            local in=$(echo $res | cut -d ',' -f4)
+            local out=$(echo $res | cut -d ',' -f5)
+            local tot=$(echo $res | cut -d ',' -f7)
+            local sum=$(( in + out ))
+            local in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
+            local out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
+            local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
+            local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
+            local ip=$(echo $res | cut -d ',' -f9)
+            printf "%-27s %-6s %-16s %-17s %-17s %-19s %-s\n" \
+                "$login" "$online" "$in" "$out" "$sum" "$tot" "$ip"
+        fi
         exit 0
     fi
 }
@@ -298,16 +326,51 @@ set_config() {
 
 mkdir -p $CACHE_DIR
 script_name=$(basename "$0")
-args=$(getopt -o c:l:o:w --long config:,login,logout,whoami -n "$script_name" -- "$@")
-if [ $? != 0 ] ; then exit 1 ; fi
-
+args=$(getopt -o c:l:o:w:v --long config:,login,logout,whoami,verbose,v4,v6 -n "$script_name" -- "$@")
+if [ $? != 0 ]; then exit 1; fi
+verbose=0
 while true; do
     case "$1" in
-        -c | --config ) set_config; exit 0 ;;
-        -l | --login ) login; exit 0 ;;
-        -o | --logout ) logout; exit 0 ;;
-        -w | --whoami ) whoami; exit 0 ;;
-        -- ) shift; break ;;
-        * ) break ;;
+    -c | --config)
+        set_config
+        exit 0
+        ;;
+    -l | --login)
+        op="login"
+        shift
+        ;;
+    -o | --logout)
+        op="logout"
+        shift
+        ;;
+    -w | --whoami)
+        op="whoami"
+        shift
+        ;;
+    -v | --verbose)
+        verbose=1
+        shift
+        ;;
+    --v4)
+        ipv=4
+        shift
+        ;;
+    --v6)
+        ipv=6
+        shift
+        ;;
+    *) break ;;
     esac
 done
+log_debug "verbose: $verbose"
+case $op in
+whoami)
+    whoami $ipv
+    ;;
+login)
+    login $ipv
+    ;;
+logout)
+    logout $ipv
+    ;;
+esac
