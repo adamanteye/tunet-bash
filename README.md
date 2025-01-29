@@ -113,6 +113,10 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 ## Change Log
 
+### v1.2.2
+
+- 修复 `-a auto` 条件判断
+
 ### v1.2.1
 
 - MAC, 在线设备数, 余额查询
