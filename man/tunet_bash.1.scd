@@ -16,22 +16,37 @@ It is written in bash with minimal dependencies.
 # OPTIONS
 
 *-c*,*--config*
-	Specify the username and password for the account in use.
-	They will be written to _$HOME/.cache/tunet_bash/passwd_.
+	Start an interactive prompt to specify
+	the username and password for the account in use.
+	The credentials will be saved to _$HOME/.cache/tunet_bash/passwd_.
 
-	Once set, the username and password will be used for login
-	and logout operations.
+	Once configured, these credentials will be used for login and logout operations.
 
 *-l*,*--login*
-	Make login request.
+	Make a login request.
+
+	Defaults to auth4 unless *--v4* or *--v6* is specified.
 
 *-o*,*--logout*
-	Make logout request.
+	Make a logout request.
+
+	Defaults to auth4 unless *--v4* or *--v6* is specified.
 
 *-w*,*--whoami*
-	Query account username currently online.
+	Make a status query of account currently online.
+
+	Defaults to auth4 unless *--v4* or *--v6* is specified.
 
 	Can also be used with a Tsinghua-Secure connection.
+
+*--v4*
+	Use auth4.
+
+*--v6*
+	Use auth6.
+
+*-v*,*--verbose*
+	When used with *-w*,*--whoami*, provides detailed account statistics.
 
 # ENVIRONMENT
 
@@ -41,16 +56,14 @@ It is written in bash with minimal dependencies.
 	However, error messages will always be printed.
 
 *TUNET_USERNAME*
-	If set, the username defined in _$HOME/.cache/tunet_bash/passwd_
-	will be overridden.
+	If set, it overrides username defined in _$HOME/.cache/tunet_bash/passwd_.
 
 *TUNET_PASSWORD*
-	If set, the password defined in _$HOME/.cache/tunet_bash/passwd_
-	will be overridden.
+	If set, it overrides password defined in _$HOME/.cache/tunet_bash/passwd_.
 
 # FILES
 
-$HOME/.cache/tunet_bash/passwd
+- $HOME/.cache/tunet_bash/passwd
 
 # AUTHOR
 

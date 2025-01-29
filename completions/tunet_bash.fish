@@ -1,4 +1,7 @@
 complete -c tunet_bash -s c -l config -d 'Specify username and password for account in use'
 complete -c tunet_bash -s l -l login -d 'Make login request'
 complete -c tunet_bash -s o -l logout -d 'Make logout request'
-complete -c tunet_bash -s w -l whoami -d 'Query account username currently online'
+complete -c tunet_bash -s w -l whoami -d 'Make a status query of account currently online'
+complete -c tunet_bash -s v -l verbose -d 'When used with whoami query, provides detailed account statistics'
+complete -c tunet_bash -l v4 -d 'Use auth4'
+complete -c tunet_bash -l v6 -d 'Use auth6'
