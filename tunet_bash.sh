@@ -14,13 +14,14 @@ REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 KEY_ARRAY_LENGTH=4
 
 CACHE_DIR="$HOME/.cache/tunet_bash"
-LOG_LEVEL=${LOG_LEVEL:-"info"}
+LOG_LEVEL=${TUNET_LOG_LEVEL:-"info"}
 
 key_array=()
 data_array=()
 
 verbose=0
 ipv=4
+date_format="--rfc-3339 s"
 
 fill_key() {
     local key="$1"
@@ -33,7 +34,6 @@ fill_key() {
     while [ ${#array[@]} -lt 16 ]; do
         local array+=(0)
     done
-    local temp_u32
     for ((i = 0; i < KEY_ARRAY_LENGTH; i++)); do
         local temp_u32=0
         for ((j = 0; j < 4; j++)); do
@@ -67,7 +67,7 @@ encode() {
     local d=0
     local z=0
     for ((i = 0; i < 4 && $((n * 4 + i)) < ${#data_array[@]}; i++)); do
-        z=$((z | (data_array[$((n * 4 + i))] << (8 * i))))
+        local z=$((z | (data_array[$((n * 4 + i))] << (8 * i))))
     done
     for ((i = 0; i < q; i++)); do
         local d=$((d + 0x9E3779B9))
@@ -76,7 +76,7 @@ encode() {
             local y_index=$((((p + 1) % (n + 1)) * 4))
             local y=0
             for ((j = 0; j < 4 && $((y_index + j)) < ${#data_array[@]}; j++)); do
-                y=$((y | (data_array[$((y_index + j))] << (8 * j))))
+                local y=$((y | (data_array[$((y_index + j))] << (8 * j))))
             done
             local m=$(((z >> 5) ^ (y << 2)))
             local m=$((m + ((y >> 3) ^ (z << 4) ^ (d ^ y))))
@@ -105,11 +105,14 @@ tea() {
 }
 
 log_date() {
-    echo "[$(date --rfc-3339 s)]"
+    echo "[$(date $date_format)]"
 }
 
 log_error() {
-    echo "$(log_date) ERROR $1" >&2
+    if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ] ||
+        [ $LOG_LEVEL == "error" ]; then
+        echo "$(log_date) ERROR $1" >&2
+    fi
 }
 
 check_user() {
@@ -306,10 +309,8 @@ set_config() {
 }
 
 mkdir -p $CACHE_DIR
-script_name=$(basename "$0")
-args=$(getopt -o c,i,o,w,v --long config,login,logout,whoami,verbose,v4,v6 -n "$script_name" -- "$@")
-if [ $? != 0 ]; then exit 1; fi
-while true; do
+op="whoami"
+while [[ $# -gt 0 ]]; do
     case "$1" in
     -c | --config)
         set_config
@@ -331,25 +332,49 @@ while true; do
         verbose=1
         shift
         ;;
-    --v4)
-        ipv=4
-        shift
+    -a | --auth)
+        ipv="$2"
+        shift 2
         ;;
-    --v6)
-        ipv=6
-        shift
+    --date-format)
+        date_format="$2"
+        shift 2
         ;;
-    *) break ;;
+    --)
+        shift
+        break
+        ;;
+    *)
+        echo "Unknown option: $1" >&2
+        exit 1
+        ;;
     esac
 done
+
+if [ "$ipv" = "auto" ]; then
+    REGEX_IPV='//auth([46])\.tsinghua\.edu\.cn'
+    res=$(curl -s $REDIRECT_URL)
+    [[ $res =~ $REGEX_IPV ]]
+    ipv=${BASH_REMATCH[1]}
+    if [-z $ipv]; then
+        ipv=4
+    fi
+    log_debug "ipv: $ipv"
+fi
+
+if [[ "$ipv" != "4" ]] && [[ $ipv != "6" ]]; then
+    echo "Unknown auth method: $ipv" >&2
+    exit 1
+fi
+
 case $op in
 whoami)
-    whoami $ipv
+    whoami
     ;;
 login)
-    login $ipv
+    login
     ;;
 logout)
-    logout $ipv
+    logout
     ;;
 esac

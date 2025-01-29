@@ -10,14 +10,15 @@ tunet_bash - Tsinghua University network authentication script
 
 # DESCRIPTION
 
-*tunet_bash* is an authentication script for Tsinghua network.
-It is written in bash with minimal dependencies.
+*tunet_bash* is an authentication script for Tsinghua University network.++
+It is written in bash with minimal dependencies and assumptions.
 
 # OPTIONS
 
 *-c*,*--config*
 	Start an interactive prompt to specify
 	the username and password for the account in use.
+
 	The credentials will be saved to _$HOME/.cache/tunet_bash/passwd_.
 
 	Once configured, these credentials will be used for login and logout operations.
@@ -25,35 +26,51 @@ It is written in bash with minimal dependencies.
 *-i*,*--login*
 	Make a login request.
 
-	Defaults to auth4 unless *--v4* or *--v6* is specified.
-
 *-o*,*--logout*
 	Make a logout request.
-
-	Defaults to auth4 unless *--v4* or *--v6* is specified.
 
 *-w*,*--whoami*
 	Make a status query of account currently online.
 
-	Defaults to auth4 unless *--v4* or *--v6* is specified.
-
 	Can also be used with a Tsinghua-Secure connection.
 
-*--v4*
-	Use auth4.
+*-a*,*--auth* _IP_VERSION_
+	Specify using auth4 or auth6.
 
-*--v6*
-	Use auth6.
+	Possible values of _IP_VERSION_ are _auto_, _4_ and _6_.
 
-*-v*,*--verbose*
-	When used with *-w*,*--whoami*, provides detailed account statistics.
+	The default _IP_VERSION_ is _auto_.
+
+*--date-format* _DATE_FORMAT_
+	Format string passed to *date* command.
+
+	The default _DATE_FORMAT_ is *--rfc-3339 s*.
+
+# EXAMPLES
+
+*tunet_bash*
+	No Options applied, defaults to make a status query.
+
+*tunet_bash* *-c*
+	Start an interactive prompt to configure username and password.
+
+*tunet_bash* *-i*
+	Make login request.
+
+*tuent_bash* *-o* *-a* _6_
+	Make logout request using auth6.
+
+*tunet_bash* *-w* *-v* *--date-format* _"+%c"_
+	Make detailed status query.
+
+	Print log messages using *date* _"+%c"_
 
 # ENVIRONMENT
 
-*LOG_LEVEL*
-	Possible values are _debug_ or _info_.
+*TUNET_LOG_LEVEL*
+	Possible values are _debug_, _info_ or _error_.
 
-	However, error messages will always be printed.
+	If set to others, no messages will be printed.
 
 *TUNET_USERNAME*
 	If set, it overrides username defined in _$HOME/.cache/tunet_bash/passwd_.
@@ -67,5 +84,9 @@ It is written in bash with minimal dependencies.
 
 # AUTHOR
 
-Maintained by adamanteye <ada@adamanteye.cc>. Up-to-date sources are
-available at _https://github.com/adamanteye/tunet_bash_.
+Maintained by adamanteye <ada@adamanteye.cc>.++
+Up-to-date sources are available at _https://github.com/adamanteye/tunet_bash_.
+
+# SEE ALSO
+
+*date*(1)

@@ -39,14 +39,14 @@ $ make uninstall
 ```sh
 $ export TUNET_USERNAME=<your username>
 $ export TUNET_PASSWORD=<your password>
-$ export LOG_LEVEL=debug # default info
-$ tunet_bash --login     # default ipv4
+$ export TUNET_LOG_LEVEL=debug # default info
+$ tunet_bash --login           # automatically use auth4 or auth6
 ```
 
 ```sh
 $ export TUNET_USERNAME=<your username>
 $ export TUNET_PASSWORD=<your password>
-$ tunet_bash --login --v6
+$ tunet_bash --login --auth 6
 [2025-01-29 11:18:23+08:00] INFO login_ok
 ```
 
@@ -68,7 +68,7 @@ $ tunet_bash --whoami
 ```
 
 ```sh
-$ tunet_bash --whoami --verbose --v6
+$ tunet_bash --whoami --verbose --auth 6
 [2025-01-29 12:08:53+08:00] INFO yangzheh22
 LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SUM(MiB)  TRAFFIC_TOTAL(GiB)  IP
 2025-01-29 11:45:48+08:00   0.39   3.41             1.20              4.62              36.95               2402:f000:4:1008:809:ffff:ffff:3138
@@ -76,7 +76,7 @@ LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SU
 
 `TRAFFIC_IN`, `TRAFFIC_OUT`, `TRAFFIC_SUM` 统计当前登陆会话的流量, `TRAFFIC_TOTAL` 统计本月总流量.
 
-详细说明请查看手册.
+更多详细说明请查看手册页.
 
 ## 功能
 
@@ -112,6 +112,12 @@ LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SU
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
 ## Change Log
+
+### v1.2.0
+
+- 支持 `--date-format` 选项
+- 替换 `--v4`, `--v6` 选项为 `--auth`
+- 允许自动确定 auth4 或 auth6
 
 ### v1.1.1
 
