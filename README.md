@@ -9,35 +9,66 @@
 ### 安装
 
 ```sh
-make install # default to $HOME/.local
+$ make install # default to $HOME/.local
 ```
 
 或者安装到自定义路径:
 
 ```sh
-sudo make PREFIX=/usr/local install
+$ sudo make PREFIX=/usr/local install
 ```
 
-### 命令
+如果要生成手册页:
 
 ```sh
-export TUNET_USERNAME=<your username>
-export TUNET_PASSWORD=<your password>
-export LOG_LEVEL=debug # default info
-tunet_bash --login
+$ make man
+```
+
+如果要卸载:
+
+```sh
+$ make uninstall
+```
+
+### 示例
+
+```sh
+$ export TUNET_USERNAME=<your username>
+$ export TUNET_PASSWORD=<your password>
+$ export LOG_LEVEL=debug # default info
+$ tunet_bash --login     # default ipv4
+```
+
+```sh
+$ export TUNET_USERNAME=<your username>
+$ export TUNET_PASSWORD=<your password>
+$ tunet_bash --login --v6
+[2025-01-29 11:18:23+08:00] INFO login_ok
 ```
 
 或者, 也可以将用户名和密码写入 `$HOME/.cache/tunet_bash/passwd` 文件中, 这一过程可以通过以下命令完成:
 
 ```sh
-tunet_bash --config
+$ tunet_bash --config
 ```
+
+此后将使用已设定的用户名和密码, 环境变量可以覆盖文件中的账户.
 
 如果查询当前登入用户, 可以使用:
 
 ```sh
-tunet_bash --whoami
+$ tunet_bash --whoami
+[2025-01-29 10:13:33+08:00] INFO yangzheh22
 ```
+
+```sh
+$ tunet_bash --whoami --verbose --v6
+[2025-01-29 12:08:53+08:00] INFO yangzheh22
+LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SUM(MiB)  TRAFFIC_TOTAL(GiB)  IP
+2025-01-29 11:45:48+08:00   0.39   3.41             1.20              4.62              36.95               2402:f000:4:1008:809:ffff:ffff:3138
+```
+
+`TRAFFIC_IN`, `TRAFFIC_OUT`, `TRAFFIC_SUM` 统计当前登陆会话的流量, `TRAFFIC_TOTAL` 统计本月总流量.
 
 ## 功能
 
@@ -47,7 +78,7 @@ tunet_bash --whoami
 
 - [x] 登入登出
 - [x] 当前用户查询
-- [ ] 历史流量查询
+- [x] 在线时间, 流量查询
 
 ## 依赖
 
@@ -73,6 +104,11 @@ tunet_bash --whoami
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
 ## Change Log
+
+### v1.1.0
+
+- 在线时间, 流量等查询
+- 指定 auth4 或 auth6
 
 ### v1.0.1
 
