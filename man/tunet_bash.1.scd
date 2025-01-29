@@ -61,9 +61,7 @@ It is written in bash with minimal dependencies and assumptions.
 	Make logout request using auth6.
 
 *tunet_bash* *-w* *-v* *--date-format* _"+%c"_
-	Make detailed status query.
-
-	Print log messages using *date* _"+%c"_
+	Make detailed status query with log messages date format _"+%c"_
 
 # ENVIRONMENT
 

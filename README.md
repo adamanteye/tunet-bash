@@ -70,8 +70,8 @@ $ tunet_bash --whoami
 ```sh
 $ tunet_bash --whoami --verbose --auth 6
 [2025-01-29 12:08:53+08:00] INFO yangzheh22
-LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SUM(MiB)  TRAFFIC_TOTAL(GiB)  IP
-2025-01-29 11:45:48+08:00   0.39   3.41             1.20              4.62              36.95               2402:f000:4:1008:809:ffff:ffff:3138
+LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SUM(MiB)  TRAFFIC_TOTAL(GiB)  MAC                IP
+2025-01-30 00:22:24+08:00   1.06   3       0        8.18             2.52              10.71             37.46               00:10:20:30:40:50  2402:f000:4:1008:809:ffff:ffff:3138
 ```
 
 `TRAFFIC_IN`, `TRAFFIC_OUT`, `TRAFFIC_SUM` 统计当前登陆会话的流量, `TRAFFIC_TOTAL` 统计本月总流量.
@@ -112,6 +112,10 @@ LOGIN                       UP(h)  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SU
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
 ## Change Log
+
+### v1.2.1
+
+- MAC, 在线设备数, 余额查询
 
 ### v1.2.0
 

@@ -8,6 +8,9 @@ AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info"
 AUTH6_USER_INFO="https://auth6.tsinghua.edu.cn/cgi-bin/rad_user_info"
+AUTH4_USER_INFO_JSON="$AUTH4_USER_INFO?callback=any"
+AUTH6_USER_INFO_JSON="$AUTH6_USER_INFO?callback=any"
+REGEX_USER_INFO_JSON='"online_device_total":"([^"]+)"[^}]*"user_balance":([^,]+)[^}]*"user_mac":"([^"]+)"'
 REDIRECT_URL="http://info.tsinghua.edu.cn/"
 REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
@@ -269,9 +272,9 @@ whoami() {
     else
         log_info $user
         if [ $verbose -eq 1 ]; then
-            printf "%-27s %-6s %-16s %-17s %-17s %-19s %-s\n" \
-                "LOGIN" "UP(h)" "TRAFFIC_IN(MiB)" "TRAFFIC_OUT(MiB)" \
-                "TRAFFIC_SUM(MiB)" "TRAFFIC_TOTAL(GiB)" "IP"
+            printf "%-27s %-6s %-7s %-8s %-16s %-17s %-17s %-19s %-18s %-s\n" \
+                "LOGIN" "UP(h)" "DEVICE" "BALANCE" "TRAFFIC_IN(MiB)" "TRAFFIC_OUT(MiB)" \
+                "TRAFFIC_SUM(MiB)" "TRAFFIC_TOTAL(GiB)" "MAC" "IP"
             local login=$(echo $res | cut -d ',' -f2)
             local online=$(echo $res | cut -d ',' -f3)
             local online=$((online - login))
@@ -286,8 +289,17 @@ whoami() {
             local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
             local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
             local ip=$(echo $res | cut -d ',' -f9)
-            printf "%-27s %-6s %-16s %-17s %-17s %-19s %-s\n" \
-                "$login" "$online" "$in" "$out" "$sum" "$tot" "$ip"
+            local AUTH_USER_INFO_JSON=$([ $ipv == 6 ] && echo $AUTH6_USER_INFO_JSON || echo $AUTH4_USER_INFO_JSON)
+            local res=$(curl -s $AUTH_USER_INFO_JSON)
+            [[ $res =~ $REGEX_USER_INFO_JSON ]]
+            log_debug "json: $res"
+            local device=${BASH_REMATCH[1]}
+            local balance=${BASH_REMATCH[2]}
+            local mac=${BASH_REMATCH[3]}
+            local mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
+            printf "%-27s %-6s %-7s %-8s %-16s %-17s %-17s %-19s %-18s %-s\n" \
+                "$login" "$online" "$device" "$balance" \
+                "$in" "$out" "$sum" "$tot" "$mac" "$ip"
         fi
         exit 0
     fi
