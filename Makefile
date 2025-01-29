@@ -2,7 +2,9 @@
 
 PREFIX := $(HOME)/.local
 
-install: tunet_bash.sh
+install: $(PREFIX)/bin/tunet_bash
+
+$(PREFIX)/bin/tunet_bash: tunet_bash.sh
 	@mkdir -p $(PREFIX)/bin
 	@cp tunet_bash.sh $(PREFIX)/bin/tunet_bash
 	@chmod 755 $(PREFIX)/bin/tunet_bash
