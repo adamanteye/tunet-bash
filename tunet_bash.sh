@@ -368,7 +368,7 @@ if [ "$ipv" = "auto" ]; then
     res=$(curl -s $REDIRECT_URL)
     [[ $res =~ $REGEX_IPV ]]
     ipv=${BASH_REMATCH[1]}
-    if [-z $ipv]; then
+    if [ -z $ipv ]; then
         ipv=4
     fi
     log_debug "ipv: $ipv"
