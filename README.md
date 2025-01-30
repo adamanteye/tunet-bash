@@ -101,7 +101,7 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 ## 参考
 
-以下项目或博客为实现 bash 版本的认证逻辑提供了参考:
+以下项目或博客为实现 Bash 版本的认证逻辑提供了参考:
 
 - [tunet-rust](https://github.com/Berrysoft/tunet-rust)
 - [清华校园网自动连接脚本](https://github.com/WhymustIhaveaname/TsinghuaTunet)
@@ -112,6 +112,11 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
 ## Change Log
+
+### v1.2.3
+
+- 支持短选项组合
+- 设置 `LC_ALL=C`
 
 ### v1.2.2
 

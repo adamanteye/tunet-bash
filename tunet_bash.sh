@@ -2,6 +2,8 @@
 
 set -o pipefail
 
+export LC_ALL=C
+
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
@@ -25,6 +27,7 @@ data_array=()
 verbose=0
 ipv=4
 date_format="--rfc-3339 s"
+op="whoami"
 
 fill_key() {
     local key="$1"
@@ -32,15 +35,15 @@ fill_key() {
     for ((i = 0; i < ${#key}; i++)); do
         local char=${key:$i:1}
         local value=$(printf "%d" "'$char")
-        local array+=($value)
+        array+=($value)
     done
     while [ ${#array[@]} -lt 16 ]; do
-        local array+=(0)
+        array+=(0)
     done
     for ((i = 0; i < KEY_ARRAY_LENGTH; i++)); do
         local temp_u32=0
         for ((j = 0; j < 4; j++)); do
-            local temp_u32=$((temp_u32 | (array[$((i * 4 + j))] << (8 * j))))
+            temp_u32=$((temp_u32 | (array[$((i * 4 + j))] << (8 * j))))
         done
         key_array[i]=$temp_u32
     done
@@ -70,29 +73,29 @@ encode() {
     local d=0
     local z=0
     for ((i = 0; i < 4 && $((n * 4 + i)) < ${#data_array[@]}; i++)); do
-        local z=$((z | (data_array[$((n * 4 + i))] << (8 * i))))
+        z=$((z | (data_array[$((n * 4 + i))] << (8 * i))))
     done
     for ((i = 0; i < q; i++)); do
-        local d=$((d + 0x9E3779B9))
+        d=$((d + 0x9E3779B9))
         local e=$(((d >> 2) & 3))
         for ((p = 0; p <= n; p++)); do
             local y_index=$((((p + 1) % (n + 1)) * 4))
             local y=0
             for ((j = 0; j < 4 && $((y_index + j)) < ${#data_array[@]}; j++)); do
-                local y=$((y | (data_array[$((y_index + j))] << (8 * j))))
+                y=$((y | (data_array[$((y_index + j))] << (8 * j))))
             done
             local m=$(((z >> 5) ^ (y << 2)))
-            local m=$((m + ((y >> 3) ^ (z << 4) ^ (d ^ y))))
-            local m=$((m + (key_array[$(((p & 3) ^ e))] ^ z)))
-            local m_index=$((p * 4))
+            m=$((m + ((y >> 3) ^ (z << 4) ^ (d ^ y))))
+            m=$((m + (key_array[$(((p & 3) ^ e))] ^ z)))
+            m_index=$((p * 4))
             local temp_m=$((data_array[$m_index] | (data_array[$((m_index + 1))] << 8) | (data_array[$((m_index + 2))] << 16) | (data_array[$((m_index + 3))] << 24)))
-            local m=$((m + temp_m))
-            local m=$((m & 0xFFFFFFFF))
+            m=$((m + temp_m))
+            m=$((m & 0xFFFFFFFF))
             data_array[$((m_index + 0))]=$((m & 0xFF))
             data_array[$((m_index + 1))]=$(((m >> 8) & 0xFF))
             data_array[$((m_index + 2))]=$(((m >> 16) & 0xFF))
             data_array[$((m_index + 3))]=$(((m >> 24) & 0xFF))
-            local z=$m
+            z=$m
         done
     done
     for ((i = 0; i < ${#data_array[@]}; i++)); do
@@ -195,7 +198,7 @@ login() {
     local password_md5=$(gen_hmacmd5 $challenge)
     log_debug "password_md5: {MD5}$password_md5"
     local checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
-    local checksum=$(echo -n $checksum | openssl sha1 -hex -r | cut -d ' ' -f 1)
+    checksum=$(echo -n $checksum | openssl sha1 -hex -r | cut -d ' ' -f 1)
     log_debug "checksum: $checksum"
     log_debug "make login request"
     local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
@@ -243,7 +246,7 @@ logout() {
         --data-urlencode "double_stack=1" \
         --data-urlencode "username=$USERNAME" \
         --data-urlencode "callback=callback")
-    log_debug "response: $response"
+    log_debug "res: $response"
     local REGEX_SUC_MSG='"error":"([^"]+)"'
     [[ $response =~ $REGEX_SUC_MSG ]]
     local suc_msg=${BASH_REMATCH[1]}
@@ -320,8 +323,43 @@ set_config() {
     chmod 600 $CACHE_DIR/passwd
 }
 
+preprocess_args() {
+    local args=("$@")
+    new_args=()
+    local i=0
+    while ((i < ${#args[@]})); do
+        local arg="${args[i]}"
+        case "$arg" in
+        --)
+            new_args+=("--")
+            ((i++))
+            ;;
+        --*)
+            new_args+=("$arg")
+            ((i++))
+            ;;
+        -?*)
+            local opt_str="${arg:1}"
+            while [[ -n "$opt_str" ]]; do
+                local opt_char="${opt_str:0:1}"
+                new_args+=("-${opt_char}")
+                opt_str="${opt_str:1}"
+            done
+            ((i++))
+            ;;
+        *)
+            new_args+=("$arg")
+            ((i++))
+            ;;
+        esac
+    done
+}
+
+preprocess_args "$@"
+
+set -- "${new_args[@]}"
 mkdir -p $CACHE_DIR
-op="whoami"
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -c | --config)
