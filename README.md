@@ -113,6 +113,11 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 ## Change Log
 
+### v1.2.4
+
+- 更通用的 shebang
+- 打印版本
+
 ### v1.2.3
 
 - 支持短选项组合

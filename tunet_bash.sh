@@ -1,8 +1,11 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 set -o pipefail
 
 export LC_ALL=C
+
+NAME="tunet_bash"
+VERSION="1.2.4"
 
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
@@ -389,6 +392,10 @@ while [[ $# -gt 0 ]]; do
     --date-format)
         date_format="$2"
         shift 2
+        ;;
+    --version)
+        echo "$NAME $VERSION"
+        exit 0
         ;;
     --)
         shift

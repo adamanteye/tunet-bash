@@ -46,6 +46,9 @@ It is written in bash with minimal dependencies and assumptions.
 
 	The default _DATE_FORMAT_ is *--rfc-3339 s*.
 
+*--version*
+	Print version and exit.
+
 # EXAMPLES
 
 *tunet_bash*
