@@ -5,7 +5,7 @@ set -o pipefail
 export LC_ALL=C
 
 NAME="tunet_bash"
-VERSION="1.2.4"
+VERSION="1.2.5"
 
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
@@ -31,6 +31,10 @@ verbose=0
 ipv=4
 date_format="--rfc-3339 s"
 op="whoami"
+
+USERNAME=${TUNET_USERNAME}
+PASSWORD=${TUNET_PASSWORD}
+PASSNAME=${TUNET_PASSNAME}
 
 fill_key() {
     local key="$1"
@@ -125,19 +129,23 @@ log_error() {
 }
 
 check_user() {
-    USERNAME=$TUNET_USERNAME
+    USERNAME=${USERNAME:-"$TUNET_USERNAME"}
     if [ -z $USERNAME ]; then
         log_error "TUNET_USERNAME is not set"
         exit 1
     fi
-
 }
 
 check_pass() {
-    PASSWORD=$TUNET_PASSWORD
-    if [ -z $PASSWORD ]; then
-        log_error "TUNET_PASSWORD is not set"
-        exit 1
+    PASSNAME=${PASSNAME:-"$TUNET_PASSNAME"}
+    PASSWORD=${PASSWORD:-"$TUNET_PASSWORD"}
+    if [ -z $PASSNAME ]; then
+        if [ -z $PASSWORD ]; then
+            log_error "TUNET_PASSWORD is not set"
+            exit 1
+        fi
+    else
+        PASSWORD="$(pass show "$PASSNAME")"
     fi
 }
 
@@ -311,18 +319,24 @@ whoami() {
     fi
 }
 
-set_config() {
-    USERNAME=$TUNET_USERNAME
-    PASSWORD=$TUNET_PASSWORD
+config() {
     while [[ -z $USERNAME ]]; do
         read -p "username: " USERNAME
     done
-    while [[ -z $PASSWORD ]]; do
-        read -s -p "password: " PASSWORD
-        echo
-    done
     echo "export TUNET_USERNAME=$USERNAME" >$CACHE_DIR/passwd
-    echo "export TUNET_PASSWORD=$PASSWORD" >>$CACHE_DIR/passwd
+    if [[ $use_passname = "yes" ]]; then
+        while [[ -z $PASSNAME ]]; do
+            read -p "passname: " PASSNAME
+        done
+        echo "export TUNET_PASSNAME=$PASSNAME" >>$CACHE_DIR/passwd
+    else
+
+        while [[ -z $PASSWORD ]]; do
+            read -s -p "password: " PASSWORD
+            echo
+        done
+        echo "export TUNET_PASSWORD=$PASSWORD" >>$CACHE_DIR/passwd
+    fi
     chmod 600 $CACHE_DIR/passwd
 }
 
@@ -366,8 +380,8 @@ mkdir -p $CACHE_DIR
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -c | --config)
-        set_config
-        exit 0
+        op="config"
+        shift
         ;;
     -i | --login)
         op="login"
@@ -397,6 +411,10 @@ while [[ $# -gt 0 ]]; do
         echo "$NAME $VERSION"
         exit 0
         ;;
+    --pass)
+        use_passname="yes"
+        shift
+        ;;
     --)
         shift
         break
@@ -425,6 +443,9 @@ if [[ "$ipv" != "4" ]] && [[ $ipv != "6" ]]; then
 fi
 
 case $op in
+config)
+    config
+    ;;
 whoami)
     whoami
     ;;

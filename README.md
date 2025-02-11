@@ -39,8 +39,8 @@ $ make uninstall
 ```sh
 $ export TUNET_USERNAME=<your username>
 $ export TUNET_PASSWORD=<your password>
-$ export TUNET_LOG_LEVEL=debug # default info
-$ tunet_bash --login           # automatically use auth4 or auth6
+$ export TUNET_LOG_LEVEL=debug  # default info
+$ tunet_bash --login            # automatically use auth4 or auth6
 ```
 
 ```sh
@@ -59,6 +59,16 @@ password:
 ```
 
 此后将使用已设定的用户名和密码, 环境变量可以覆盖文件中的用户名和密码.
+
+也可以选择使用 [pass](https://www.passwordstore.org/) 存储密码:
+
+```sh
+$ tunet_bash --config --pass
+username: yangzheh22
+passname: tsinghua/yangzheh22
+```
+
+这种情况下密码不再是明文存储.
 
 如果查询当前登入用户, 可以使用:
 
@@ -94,10 +104,14 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 - openssl
 - curl
 
+## 可选依赖
+
+- [pass](https://www.passwordstore.org/)
+
 ## 构建依赖
 
 - make
-- scdoc
+- [scdoc](https://git.sr.ht/~sircmpwn/scdoc)
 
 ## 参考
 
@@ -112,6 +126,11 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
 ## Change Log
+
+### v1.2.5
+
+- 增加可选依赖: [pass](https://www.passwordstore.org/)
+- 密码可以非明文存储
 
 ### v1.2.4
 

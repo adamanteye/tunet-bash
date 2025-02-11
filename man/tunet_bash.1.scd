@@ -34,12 +34,20 @@ It is written in bash with minimal dependencies and assumptions.
 
 	Can also be used with a Tsinghua-Secure connection.
 
+*-v*,*--verbose*
+	Print detailed statistics if used along with *-w*,*--whoami* query.
+
 *-a*,*--auth* _IP_VERSION_
 	Specify using auth4 or auth6.
 
-	Possible values of _IP_VERSION_ are _auto_, _4_ and _6_.
+	Possible values of _IP_VERSION_ are _auto_, _4_ or _6_.
 
 	The default _IP_VERSION_ is _auto_.
+
+*--pass*
+	Use pass (_https://www.passwordstore.org/_) to configure password if used along with *-c*,*--config*.
+
+	The interactive prompt will ask for your _pass-name_.
 
 *--date-format* _DATE_FORMAT_
 	Format string passed to *date* command.
@@ -79,6 +87,11 @@ It is written in bash with minimal dependencies and assumptions.
 *TUNET_PASSWORD*
 	If set, it overrides password defined in _$HOME/.cache/tunet_bash/passwd_.
 
+*TUNET_PASSNAME*
+	If set, it overrides passname defined in _$HOME/.cache/tunet_bash/passwd_.
+
+	Also, if set, *TUNET_PASSWORD* will be discarded.
+
 # FILES
 
 - $HOME/.cache/tunet_bash/passwd
@@ -90,4 +103,4 @@ Up-to-date sources are available at _https://github.com/adamanteye/tunet_bash_.
 
 # SEE ALSO
 
-*date*(1)
+*date*(1), *pass*(1)
