@@ -90,7 +90,7 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 ### 守护登陆
 
-[crontab/autologin.sh](,/crontab/autologin.sh) 提供了一个简单的断线后重新登陆脚本, 可以设置为以下的 crontab 任务:
+[crontab/autologin.sh](./crontab/autologin.sh) 提供了一个简单的断线后重新登陆脚本, 可以设置为以下的 crontab 任务:
 
 ```
 0,20,40 * * * * /home/root/autologin.sh
