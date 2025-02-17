@@ -86,7 +86,15 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 `TRAFFIC_IN`, `TRAFFIC_OUT`, `TRAFFIC_SUM` 统计当前登陆会话的流量, `TRAFFIC_TOTAL` 统计本月总流量.
 
-更多详细说明请查看手册页.
+更多参数说明请查看手册页.
+
+### 守护登陆
+
+[crontab/autologin.sh](,/crontab/autologin.sh) 提供了一个简单的断线后重新登陆脚本, 可以设置为以下的 crontab 任务:
+
+```
+0,20,40 * * * * /home/root/autologin.sh
+```
 
 ## 功能
 
