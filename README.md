@@ -19,13 +19,7 @@ $ make install # default to $HOME/.local
 或者安装到自定义路径:
 
 ```sh
-$ sudo make PREFIX=/usr/local install
-```
-
-如果要生成手册页:
-
-```sh
-$ make man
+$ sudo make prefix=/usr/local install
 ```
 
 如果要卸载:
@@ -134,6 +128,10 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
 ## Change Log
+
+### v1.2.6
+
+- 修改 Makefile 打包
 
 ### v1.2.5
 
