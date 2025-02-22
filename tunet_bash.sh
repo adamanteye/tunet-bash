@@ -5,7 +5,7 @@ set -o pipefail
 export LC_ALL=C
 
 NAME="tunet_bash"
-VERSION="1.2.5"
+VERSION="1.2.7"
 
 AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"

@@ -129,6 +129,10 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 ## Change Log
 
+### v1.2.7
+
+- 修复 Makefile 打包
+
 ### v1.2.6
 
 - 修改 Makefile 打包
