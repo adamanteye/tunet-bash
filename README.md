@@ -10,7 +10,11 @@
 
 - Arch Linux: [AUR - tunet_bash](https://aur.archlinux.org/packages/tunet_bash)
 
-### 从源代码安装
+### 从 release 安装
+
+[releases](https://github.com/adamanteye/tunet_bash/releases) 提供了 Debian 以及 Arch Linux 的打包.
+
+### 从源码安装
 
 ```sh
 $ make install # default to $HOME/.local
