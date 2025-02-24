@@ -52,7 +52,7 @@ It is written in bash with minimal dependencies and assumptions.
 *--date-format* _DATE_FORMAT_
 	Format string passed to *date* command.
 
-	The default _DATE_FORMAT_ is *--rfc-3339 s*.
+	The default _DATE_FORMAT_ is _"--rfc-3339 s"_.
 
 *--version*
 	Print version and exit.
