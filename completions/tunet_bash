@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 _tunet_bash_completions() {
     local cur prev opts auth_opts
     COMPREPLY=()

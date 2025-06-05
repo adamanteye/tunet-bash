@@ -1,17 +1,17 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 
 set -o pipefail
 
 export LC_ALL=C
 
 NAME="tunet_bash"
-VERSION="1.2.7"
+VERSION="1.2.8"
 
-AUTH4_LOG_URL="https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal"
-AUTH4_CHALLENGE_URL="https://auth4.tsinghua.edu.cn/cgi-bin/get_challenge"
+AUTH4_LOG_URL="https://auth.tsinghua.edu.cn/cgi-bin/srun_portal"
+AUTH4_CHALLENGE_URL="https://auth.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
-AUTH4_USER_INFO="https://auth4.tsinghua.edu.cn/cgi-bin/rad_user_info"
+AUTH4_USER_INFO="https://auth.tsinghua.edu.cn/cgi-bin/rad_user_info"
 AUTH6_USER_INFO="https://auth6.tsinghua.edu.cn/cgi-bin/rad_user_info"
 AUTH4_USER_INFO_JSON="$AUTH4_USER_INFO?callback=any"
 AUTH6_USER_INFO_JSON="$AUTH6_USER_INFO?callback=any"
