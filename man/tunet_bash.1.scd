@@ -6,7 +6,15 @@ tunet_bash - Tsinghua University network authentication script
 
 # SYNOPSIS
 
-*tunet_bash* [_OPTIONS_]
+*tunet_bash* -c [--pass [--dateformat _ARG_]]
+
+*tunet_bash* -i [-a auto|4|6 [--dateformat _ARG_]]
+
+*tunet_bash* -o [-a auto|4|6 [--dateformat _ARG_]]
+
+*tunet_bash* -w [-v [--dateformat _ARG_]]
+
+*tunet_bash* --version
 
 # DESCRIPTION
 
