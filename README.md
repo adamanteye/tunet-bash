@@ -133,6 +133,10 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 ## Change Log
 
+### v1.2.8
+
+- 在仅有 IPv6 连接下的兼容性
+
 ### v1.2.7
 
 - 修复 Makefile 打包
