@@ -4,7 +4,7 @@ set -o pipefail
 
 export LC_ALL=C
 
-NAME="tunet_bash"
+NAME="tunet-bash"
 VERSION="1.2.8"
 
 AUTH4_LOG_URL="https://auth.tsinghua.edu.cn/cgi-bin/srun_portal"
@@ -21,7 +21,7 @@ REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
 KEY_ARRAY_LENGTH=4
 
-CACHE_DIR="$HOME/.cache/tunet_bash"
+CACHE_DIR="$HOME/.cache/$NAME"
 LOG_LEVEL=${TUNET_LOG_LEVEL:-"info"}
 
 key_array=()

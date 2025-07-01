@@ -1,5 +1,5 @@
 #!/bin/bash
-_tunet_bash_completions() {
+_tunet-bash_completions() {
     local cur prev opts auth_opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -20,4 +20,4 @@ _tunet_bash_completions() {
         COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
         return 0
     fi
-} && complete -F _tunet_bash_completions tunet_bash
+} && complete -F _tunet-bash_completions tunet-bash

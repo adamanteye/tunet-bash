@@ -8,11 +8,11 @@
 
 ### 从包管理器安装
 
-- Arch Linux: [AUR - tunet_bash](https://aur.archlinux.org/packages/tunet_bash)
+- Arch Linux: [AUR - tunet-bash](https://aur.archlinux.org/packages/tunet-bash)
 
 ### 从 release 安装
 
-[releases](https://github.com/adamanteye/tunet_bash/releases) 提供了 Debian 以及 Arch Linux 的打包.
+[releases](https://github.com/adamanteye/tunet-bash/releases) 提供了 Debian 以及 Arch Linux 的打包.
 
 ### 从源码安装
 
@@ -38,20 +38,20 @@ $ make uninstall
 $ export TUNET_USERNAME=<your username>
 $ export TUNET_PASSWORD=<your password>
 $ export TUNET_LOG_LEVEL=debug  # default info
-$ tunet_bash --login            # automatically use auth4 or auth6
+$ tunet-bash --login            # automatically use auth4 or auth6
 ```
 
 ```sh
 $ export TUNET_USERNAME=<your username>
 $ export TUNET_PASSWORD=<your password>
-$ tunet_bash --login --auth 6
+$ tunet-bash --login --auth 6
 [2025-01-29 11:18:23+08:00] INFO login_ok
 ```
 
-或者, 也可以将用户名和密码写入 `$HOME/.cache/tunet_bash/passwd` 文件中, 这一过程可以通过以下命令完成:
+或者, 也可以将用户名和密码写入 `$HOME/.cache/tunet-bash/passwd` 文件中, 这一过程可以通过以下命令完成:
 
 ```sh
-$ tunet_bash --config
+$ tunet-bash --config
 username: yangzheh22
 password:
 ```
@@ -61,7 +61,7 @@ password:
 也可以选择使用 [pass](https://www.passwordstore.org/) 存储密码:
 
 ```sh
-$ tunet_bash --config --pass
+$ tunet-bash --config --pass
 username: yangzheh22
 passname: tsinghua/yangzheh22
 ```
@@ -71,12 +71,12 @@ passname: tsinghua/yangzheh22
 如果查询当前登入用户, 可以使用:
 
 ```sh
-$ tunet_bash --whoami
+$ tunet-bash --whoami
 [2025-01-29 10:13:33+08:00] INFO yangzheh22
 ```
 
 ```sh
-$ tunet_bash --whoami --verbose --auth 6
+$ tunet-bash --whoami --verbose --auth 6
 [2025-01-29 12:08:53+08:00] INFO yangzheh22
 LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT(MiB)  TRAFFIC_SUM(MiB)  TRAFFIC_TOTAL(GiB)  MAC                IP
 2025-01-30 00:22:24+08:00   1.06   3       0        8.18             2.52              10.71             37.46               00:10:20:30:40:50  2402:f000:4:1008:809:ffff:ffff:3138
@@ -185,7 +185,7 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 ### v1.0.1
 
-- 合并 `tea.sh`, `tunet_bash.sh`
+- 合并 `tea.sh`, `tunet-bash.sh`
 - 短选项支持
 
 ### v1.0.0
@@ -214,4 +214,4 @@ LOGIN                       UP(h)  DEVICE  BALANCE  TRAFFIC_IN(MiB)  TRAFFIC_OUT
 
 - 针对校园网 2025-01-15 的升级, 更新获取 ac_id 的逻辑
 - 针对校园网 2025-01-15 的升级, 更新 whoami 查询的逻辑
-- 将 `tunet_bash.sh` 安装为 `tunet_bash`
+- 将 `tunet-bash.sh` 安装为 `tunet-bash`
