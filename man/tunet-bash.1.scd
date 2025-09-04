@@ -2,108 +2,117 @@ tunet-bash(1)
 
 # NAME
 
-tunet-bash - Tsinghua University network authentication script
+tunet-bash - Tsinghua University network authentication utility
 
 # SYNOPSIS
 
-*tunet-bash* -c [--pass [--dateformat _ARG_]]++
-*tunet-bash* -i [-a auto|4|6 [--dateformat _ARG_]]++
-*tunet-bash* -o [-a auto|4|6 [--dateformat _ARG_]]++
-*tunet-bash* -w [-v [--dateformat _ARG_]]++
+*tunet-bash* -c [--pass] [--date-format _ARG_]++
+*tunet-bash* -i [-a auto|4|6] [--date-format _ARG_]++
+*tunet-bash* -o [-a auto|4|6] [--date-format _ARG_]++
+*tunet-bash* -w [-v] [--date-format _ARG_]++
 *tunet-bash* --version
 
 # DESCRIPTION
 
-*tunet-bash* is an authentication script for Tsinghua University network.++
-It is written in bash with minimal dependencies and assumptions.
+*tunet-bash* is a network authentication utility for Tsinghua University.++
+It is written in bash with minimal dependencies and makes no assumptions about the user environment.
 
 # OPTIONS
 
-*-c*,*--config*
-	Start an interactive prompt to specify
-	the username and password for the account in use.
+*-c*, *--config*
+	Launch an interactive prompt to configure
+	username and password for network authentication.
 
-	The credentials will be saved to _$HOME/.cache/tunet-bash/passwd_.
+	Credentials are saved to _$HOME/.cache/tunet-bash/passwd_.
 
-	Once configured, these credentials will be used for login and logout operations.
+	Once configured, these credentials will be automatically used for login and logout operations.
 
-*-i*,*--login*
-	Make a login request.
+*-i*, *--login*
+	Authenticate and log in to the university network.
 
-*-o*,*--logout*
-	Make a logout request.
+*-o*, *--logout*
+	Log out from the university network.
 
-*-w*,*--whoami*
-	Make a status query of account currently online.
+*-w*, *--whoami*
+	Query the current account status and connection information.
 
-	Can also be used with a Tsinghua-Secure connection.
+	This command also works with Tsinghua-Secure connections.
 
-*-v*,*--verbose*
-	Print detailed statistics if used along with *-w*,*--whoami* query.
+*-v*, *--verbose*
+	Display detailed statistics when used with *-w*, *--whoami*.
 
-*-a*,*--auth* _IP_VERSION_
-	Specify using auth4 or auth6.
+	Shows comprehensive information including device details, traffic usage, and connection history.
 
-	Possible values of _IP_VERSION_ are _auto_, _4_ or _6_.
+*-a*, *--auth* _IP_VERSION_
+	Specify the authentication protocol version.
 
-	The default _IP_VERSION_ is _auto_.
+	Valid values for _IP_VERSION_ are _auto_, _4_, or _6_.
+
+	- _auto_: Automatically detect the appropriate version (default)
+	- _4_: Force IPv4 authentication (auth4.tsinghua.edu.cn)
+	- _6_: Force IPv6 authentication (auth6.tsinghua.edu.cn)
 
 *--pass*
-	Use pass (_https://www.passwordstore.org/_) to configure password if used along with *-c*,*--config*.
+	Use the pass password manager (_https://www.passwordstore.org/_) when configuring credentials with *-c*, *--config*.
 
-	The interactive prompt will ask for your _pass-name_.
+	The interactive prompt will request your _pass-name_ instead of the actual password.
 
 *--date-format* _DATE_FORMAT_
-	Format string passed to *date* command.
+	Specify the date format string passed to the *date* command for log timestamps.
 
-	The default _DATE_FORMAT_ is _"--rfc-3339 s"_.
+	Default value is _"--rfc-3339 s"_.
 
 *--version*
-	Print version and exit.
+	Display version information and exit.
 
 # EXAMPLES
 
 *tunet-bash*
-	No Options applied, defaults to make a status query.
+	Query current account status (default behavior when no options are specified).
 
 *tunet-bash* *-c*
-	Start an interactive prompt to configure username and password.
+	Configure username and password interactively.
 
 *tunet-bash* *-i*
-	Make login request.
+	Log in to the university network.
 
-*tuent_bash* *-o* *-a* _6_
-	Make logout request using auth6.
+*tunet-bash* *-o* *-a* _6_
+	Log out using IPv6 authentication (auth6).
 
 *tunet-bash* *-w* *-v* *--date-format* _"+%c"_
-	Make detailed status query with log messages date format _"+%c"_
+	Display detailed account status with custom date format for log timestamps.
 
 # ENVIRONMENT
 
 *TUNET_LOG_LEVEL*
-	Possible values are _debug_, _info_ or _error_.
+	Control the verbosity of log messages.
 
-	If set to others, no messages will be printed.
+	Valid values: _debug_, _info_, _error_.
+
+	If set to any other value, no log messages will be displayed.
 
 *TUNET_USERNAME*
-	If set, it overrides username defined in _$HOME/.cache/tunet-bash/passwd_.
+	Override the username stored in _$HOME/.cache/tunet-bash/passwd_.
 
 *TUNET_PASSWORD*
-	If set, it overrides password defined in _$HOME/.cache/tunet-bash/passwd_.
+	Override the password stored in _$HOME/.cache/tunet-bash/passwd_.
 
 *TUNET_PASSNAME*
-	If set, it overrides passname defined in _$HOME/.cache/tunet-bash/passwd_.
+	Override the pass-name stored in _$HOME/.cache/tunet-bash/passwd_.
 
-	Also, if set, *TUNET_PASSWORD* will be discarded.
+	When this is set, *TUNET_PASSWORD* is ignored in favor of retrieving the password from the pass store.
 
 # FILES
 
-- $HOME/.cache/tunet-bash/passwd
+_$HOME/.cache/tunet-bash/passwd_
+	Stores user credentials including username, password, or pass-name.
+
+	This file is created with restricted permissions (600) for security.
 
 # AUTHOR
 
 Maintained by adamanteye <ada@adamanteye.cc>.++
-Up-to-date sources are available at _https://github.com/adamanteye/tunet-bash_.
+Source code and issue tracker: _https://github.com/adamanteye/tunet-bash_.
 
 # SEE ALSO
 

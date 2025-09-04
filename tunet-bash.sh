@@ -2,20 +2,18 @@
 
 set -o pipefail
 
-export LC_ALL=C
+export LC_ALL=C.UTF-8
 
 NAME="tunet-bash"
-VERSION="1.2.8"
+VERSION="1.2.9"
 
 AUTH4_LOG_URL="https://auth.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH4_CHALLENGE_URL="https://auth.tsinghua.edu.cn/cgi-bin/get_challenge"
 AUTH6_LOG_URL="https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal"
 AUTH6_CHALLENGE_URL="https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge"
-AUTH4_USER_INFO="https://auth.tsinghua.edu.cn/cgi-bin/rad_user_info"
-AUTH6_USER_INFO="https://auth6.tsinghua.edu.cn/cgi-bin/rad_user_info"
-AUTH4_USER_INFO_JSON="$AUTH4_USER_INFO?callback=any"
-AUTH6_USER_INFO_JSON="$AUTH6_USER_INFO?callback=any"
-REGEX_USER_INFO_JSON='"online_device_total":"([^"]+)"[^}]*"user_balance":([^,]+)[^}]*"user_mac":"([^"]+)"'
+TUNET_USER_INFO_URL="https://login.tsinghua.edu.cn/cgi-bin/rad_user_info"
+TUNET_USER_INFO_JSON_URL="${TUNET_USER_INFO_URL}?callback=any"
+REGEX_USER_INFO_JSON='"billing_name":"([^"]+)".*"online_device_total":"([^"]+)"[^}]*"products_name":"([^"]+)"[^}]*"sysver":"([^"]+)"[^}]*"user_balance":([^,]+)[^}]*"user_mac":"([^"]+)"'
 REDIRECT_URL="http://info.tsinghua.edu.cn/"
 REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
@@ -274,21 +272,15 @@ logout() {
 }
 
 whoami() {
-    local AUTH_USER_INFO=$([ $ipv == 6 ] && echo $AUTH6_USER_INFO || echo $AUTH4_USER_INFO)
-    local res=$(curl -s $AUTH_USER_INFO)
-    log_debug "res: $res"
+    local res=$(curl -s $TUNET_USER_INFO_URL)
+    log_debug "get $TUNET_USER_INFO_URL: $res"
     local cnt=$(echo $res | tr ',' '\n' | wc -l)
-    log_debug "cnt: $cnt"
-    local user=$(echo $res | cut -d ',' -f1)
     if [ $cnt != 22 ]; then
-        log_error $user
+        log_error "expect 22 fields, get $cnt: $res"
         exit 1
     else
-        log_info $user
+        local user=$(echo $res | cut -d ',' -f1)
         if [ $verbose -eq 1 ]; then
-            printf "%-27s %-6s %-7s %-8s %-16s %-17s %-17s %-19s %-18s %-s\n" \
-                "LOGIN" "UP(h)" "DEVICE" "BALANCE" "TRAFFIC_IN(MiB)" "TRAFFIC_OUT(MiB)" \
-                "TRAFFIC_SUM(MiB)" "TRAFFIC_TOTAL(GiB)" "MAC" "IP"
             local login=$(echo $res | cut -d ',' -f2)
             local online=$(echo $res | cut -d ',' -f3)
             local online=$((online - login))
@@ -303,17 +295,61 @@ whoami() {
             local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
             local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
             local ip=$(echo $res | cut -d ',' -f9)
-            local AUTH_USER_INFO_JSON=$([ $ipv == 6 ] && echo $AUTH6_USER_INFO_JSON || echo $AUTH4_USER_INFO_JSON)
-            local res=$(curl -s $AUTH_USER_INFO_JSON)
+            local res=$(curl -s $TUNET_USER_INFO_JSON_URL)
             [[ $res =~ $REGEX_USER_INFO_JSON ]]
-            log_debug "json: $res"
-            local device=${BASH_REMATCH[1]}
-            local balance=${BASH_REMATCH[2]}
-            local mac=${BASH_REMATCH[3]}
+            log_debug "get $TUNET_USER_INFO_JSON_URL: $res"
+            local billing_name=${BASH_REMATCH[1]}
+            local device=${BASH_REMATCH[2]}
+            local products_name=${BASH_REMATCH[3]}
+            local sysver=${BASH_REMATCH[4]}
+            local balance=${BASH_REMATCH[5]}
+            local mac=${BASH_REMATCH[6]}
             local mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
-            printf "%-27s %-6s %-7s %-8s %-16s %-17s %-17s %-19s %-18s %-s\n" \
-                "$login" "$online" "$device" "$balance" \
-                "$in" "$out" "$sum" "$tot" "$mac" "$ip"
+            local label_width=18
+            printf "%-${label_width}s %s\n" "Username:" "$user"
+            printf "%-${label_width}s %s\n" "Login Time:" "$login"
+            printf "%-${label_width}s %s h\n" "Age:" "$online"
+            printf "%-${label_width}s %s\n" "Billing Name:" "$billing_name"
+            printf "%-${label_width}s %s\n" "Products Name:" "$products_name"
+            printf "%-${label_width}s %s\n" "Device Online:" "$device"
+            printf "%-${label_width}s %s CNY\n" "User Balance:" "$balance"
+            printf "%-${label_width}s %s Mi\n" "Traffic In:" "$in"
+            printf "%-${label_width}s %s Mi\n" "Traffic Out:" "$out"
+            printf "%-${label_width}s %s Mi\n" "Traffic Sum:" "$sum"
+            printf "%-${label_width}s %s Gi\n" "Traffic Total:" "$tot"
+            printf "%-${label_width}s %s\n" "MAC Address:" "$mac"
+            printf "%-${label_width}s %s\n" "IP Address:" "$ip"
+            if command -v jq >/dev/null 2>&1; then
+                local res="${res:4:-1}"
+                local device_detail=$(echo "$res" | jq -r '.online_device_detail // empty' 2>/dev/null)
+                if [ -n "$device_detail" ] && [ "$device_detail" != "null" ]; then
+                    echo
+                    printf "%-${label_width}s\n" "Device Details:"
+                    local device_num=1
+                    echo "$device_detail" | jq -r 'to_entries[] | "\(.key)|\(.value.ip)|\(.value.ip6)|\(.value.class_name)|\(.value.os_name)"' 2>/dev/null | while IFS='|' read -r device_id device_ip device_ip6 device_class device_os; do
+                        [ -z "$device_id" ] && continue
+                        local device_indent=$(printf "%*s" 2 "")
+                        local field_indent=$(printf "%*s" 4 "")
+                        local field_width=$((label_width - 4))
+                        printf "${device_indent}Device %d:\n" "$device_num"
+                        printf "${field_indent}%-${field_width}s %s\n" "Rad Online ID:" "$device_id"
+                        printf "${field_indent}%-${field_width}s %s\n" "IPv4:" "${device_ip:-N/A}"
+                        printf "${field_indent}%-${field_width}s %s\n" "IPv6:" "${device_ip6:-N/A}"
+                        [ -n "$device_class" ] && [ "$device_class" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "Class Name:" "$device_class"
+                        [ -n "$device_os" ] && [ "$device_os" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "OS Name:" "$device_os"
+                        echo
+                        ((device_num++))
+                    done
+                else
+                    echo
+                    printf "%-${label_width}s %s\n" "Device Details:" "${dim}No details available${reset}"
+                fi
+            else
+                log_debug "jq not found, skipping device details parsing"
+            fi
+            printf "%-${label_width}s %s\n" "System Version:" "$sysver"
+        else
+            log_info "$user"
         fi
         exit 0
     fi

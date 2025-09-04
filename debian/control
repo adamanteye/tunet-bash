@@ -4,13 +4,13 @@ Priority: optional
 Maintainer: adamanteye <ada@adamanteye.cc>
 Build-Depends: debhelper-compat (= 13), scdoc
 Standards-Version: 4.5.1
-Homepage: https://github.com/adamanteye/tunet_bash
+Homepage: https://github.com/adamanteye/tunet-bash
 Rules-Requires-Root: no
 
 Package: tunet-bash
 Architecture: all
 Multi-Arch: foreign
 Depends: bash, curl, openssl, ${misc:Depends}
-Suggests: pass
+Suggests: pass, jq
 Description: Tsinghua University network authentication script
  An authentication script for Tsinghua University network. It is written in bash with minimal dependencies and assumptions.
