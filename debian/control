@@ -11,6 +11,7 @@ Package: tunet-bash
 Architecture: all
 Multi-Arch: foreign
 Depends: bash, curl, openssl, ${misc:Depends}
-Suggests: pass, jq
+Suggests: pass
+Recommends: jq
 Description: Tsinghua University network authentication script
  An authentication script for Tsinghua University network. It is written in bash with minimal dependencies and assumptions.
