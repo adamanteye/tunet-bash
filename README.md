@@ -8,11 +8,37 @@
 
 ### 从包管理器安装
 
-- Arch Linux: [AUR - tunet-bash](https://aur.archlinux.org/packages/tunet-bash)
+#### Arch
 
-### 从 release 安装
+- [AUR - tunet-bash](https://aur.archlinux.org/packages/tunet-bash)
 
-[releases](https://github.com/adamanteye/tunet-bash/releases) 提供了 Debian 以及 Arch Linux 的打包.
+#### Debian
+
+```sh
+curl -fsS https://gpg.adamanteye.cc/ada.pub | sudo tee /etc/apt/keyrings/debian.adamanteye.cc.asc
+
+cat <<EOF | sudo tee /etc/apt/sources.list.d/adamanteye.sources
+Types: deb
+URIs: https://debian.adamanteye.cc/
+Suites: trixie # or bookworm
+Components: main
+Signed-By: /etc/apt/keyrings/debian.adamanteye.cc.asc
+EOF
+
+cat <<EOF | sudo tee /etc/apt/preferences.d/03-adamanteye.pref
+Explanation: By default, discard all packages from debian.adamanteye.cc
+Package: *
+Pin: origin debian.adamanteye.cc
+Pin-Priority: 1
+
+Explanation: Allow installing/updating tunet-bash from debian.adamanteye.cc
+Package: tunet-bash
+Pin: origin debian.adamanteye.cc
+Pin-Priority: 500
+EOF
+
+sudo apt-update && sudo apt-get install tunet-bash
+```
 
 ### 从源码安装
 
@@ -52,7 +78,7 @@ $ tunet-bash --login --auth 6
 
 ```sh
 $ tunet-bash --config
-username: yangzheh22
+username: qingxiaohua
 password:
 ```
 
@@ -62,8 +88,8 @@ password:
 
 ```sh
 $ tunet-bash --config --pass
-username: yangzheh22
-passname: tsinghua/yangzheh22
+username: qingxiaohua
+passname: tsinghua/qingxiaohua
 ```
 
 这种情况下密码不再是明文存储.
@@ -72,12 +98,12 @@ passname: tsinghua/yangzheh22
 
 ```sh
 $ tunet-bash --whoami
-[2025-01-29 10:13:33+08:00] INFO yangzheh22
+[2025-01-29 10:13:33+08:00] INFO qingxiaohua
 ```
 
 ```sh
 $ tunet-bash --whoami --verbose
-Username:          yangzheh22
+Username:          qingxiaohua
 Login Time:        2025-09-04 00:27:05+08:00
 Age:               19.37 h
 Billing Name:      计费
@@ -89,7 +115,7 @@ Traffic Out:       220.60 Mi
 Traffic Sum:       246.14 Mi
 Traffic Total:     0.00 Gi
 MAC Address:       00:10:20:30:40:50
-IP Address:        166.111.17.107
+IP Address:        166.111.0.1
 
 Device Details:
   Device 1:

@@ -119,10 +119,26 @@ log_date() {
 	echo "[$(date $date_format)]"
 }
 
+config_log() {
+	if [ $verbose == 1 ]; then
+		$LOG_LEVEL="debug"
+	fi
+}
+
 log_error() {
 	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ] ||
 		[ $LOG_LEVEL == "error" ]; then
 		echo "$(log_date) ERROR $1" >&2
+	fi
+}
+
+log_debug() {
+	[ $LOG_LEVEL == "debug" ] && echo -e "$(log_date) DEBUG $1" >&2
+}
+
+log_info() {
+	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ]; then
+		echo -e "$(log_date) INFO $1" >&2
 	fi
 }
 
@@ -144,16 +160,6 @@ check_pass() {
 		fi
 	else
 		PASSWORD="$(pass show "$PASSNAME")"
-	fi
-}
-
-log_debug() {
-	[ $LOG_LEVEL == "debug" ] && echo -e "$(log_date) DEBUG $1" >&2
-}
-
-log_info() {
-	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ]; then
-		echo -e "$(log_date) INFO $1" >&2
 	fi
 }
 
@@ -497,9 +503,11 @@ case $op in
 		whoami
 		;;
 	login)
+		config_log
 		login
 		;;
 	logout)
+		config_log
 		logout
 		;;
 esac
