@@ -20,7 +20,7 @@ curl -fsS https://gpg.adamanteye.cc/ada.pub | sudo tee /etc/apt/keyrings/debian.
 cat <<EOF | sudo tee /etc/apt/sources.list.d/adamanteye.sources
 Types: deb
 URIs: https://debian.adamanteye.cc/
-Suites: trixie # or bookworm
+Suites: trixie
 Components: main
 Signed-By: /etc/apt/keyrings/debian.adamanteye.cc.asc
 EOF
