@@ -37,7 +37,7 @@ Pin: origin debian.adamanteye.cc
 Pin-Priority: 500
 EOF
 
-sudo apt-update && sudo apt-get install tunet-bash
+sudo apt-get update && sudo apt-get install tunet-bash
 ```
 
 ### 从源码安装
