@@ -15,9 +15,9 @@
 #### Debian
 
 ```sh
-curl -fsS https://gpg.adamanteye.cc/ada.pub | sudo tee /etc/apt/keyrings/debian.adamanteye.cc.asc
+curl -fsS https://gpg.adamanteye.cc/ada.pub | sudo tee /etc/apt/keyrings/debian.adamanteye.cc.asc > /dev/null
 
-cat <<EOF | sudo tee /etc/apt/sources.list.d/adamanteye.sources
+cat <<EOF | sudo tee /etc/apt/sources.list.d/adamanteye.sources < /dev/null
 Types: deb
 URIs: https://debian.adamanteye.cc/
 Suites: trixie
@@ -25,7 +25,7 @@ Components: main
 Signed-By: /etc/apt/keyrings/debian.adamanteye.cc.asc
 EOF
 
-cat <<EOF | sudo tee /etc/apt/preferences.d/03-adamanteye.pref
+cat <<EOF | sudo tee /etc/apt/preferences.d/03-adamanteye.pref < /dev/null
 Explanation: By default, discard all packages from debian.adamanteye.cc
 Package: *
 Pin: origin debian.adamanteye.cc
@@ -43,7 +43,7 @@ sudo apt-get update && sudo apt-get install tunet-bash
 ### 从源码安装
 
 ```sh
-$ make install # default to $HOME/.local
+$ make install
 ```
 
 或者安装到自定义路径:
@@ -60,21 +60,7 @@ $ make uninstall
 
 ### 示例
 
-```sh
-$ export TUNET_USERNAME=<your username>
-$ export TUNET_PASSWORD=<your password>
-$ export TUNET_LOG_LEVEL=debug  # default info
-$ tunet-bash --login            # automatically use auth4 or auth6
-```
-
-```sh
-$ export TUNET_USERNAME=<your username>
-$ export TUNET_PASSWORD=<your password>
-$ tunet-bash --login --auth 6
-[2025-01-29 11:18:23+08:00] INFO login_ok
-```
-
-或者, 也可以将用户名和密码写入 `$HOME/.cache/tunet-bash/passwd` 文件中, 这一过程可以通过以下命令完成:
+配置用户名和密码, 它们会被写入 `$HOME/.cache/tunet-bash/passwd`:
 
 ```sh
 $ tunet-bash --config
@@ -82,7 +68,12 @@ username: qingxiaohua
 password:
 ```
 
-此后将使用已设定的用户名和密码, 环境变量可以覆盖文件中的用户名和密码.
+通过 auth4 登录
+
+```sh
+$ tunet-bash --login --auth 4
+[2025-10-18T14:14:14+08:00] INFO login_ok
+```
 
 也可以选择使用 [pass](https://www.passwordstore.org/) 存储密码:
 
@@ -92,46 +83,44 @@ username: qingxiaohua
 passname: tsinghua/qingxiaohua
 ```
 
-这种情况下密码不再是明文存储.
-
-如果查询当前登入用户, 可以使用:
+查询当前登入用户:
 
 ```sh
 $ tunet-bash --whoami
-[2025-01-29 10:13:33+08:00] INFO qingxiaohua
+[2025-10-18T14:14:14+08:00] INFO qingxiaohua
 ```
 
 ```sh
 $ tunet-bash --whoami --verbose
 Username:          qingxiaohua
-Login Time:        2025-09-04 00:27:05+08:00
-Age:               19.37 h
-Billing Name:      计费
-Products Name:     学生
-Device Online:     2
-User Balance:      0 CNY
-Traffic In:        25.53 Mi
-Traffic Out:       220.60 Mi
-Traffic Sum:       246.14 Mi
-Traffic Total:     0.00 Gi
-MAC Address:       00:10:20:30:40:50
+Session Start:     2025-10-18T13:54:35+08:00
+Session Age:       0.29 h
+Billing Profile:   计费
+Product Plan:      学生
+Online Devices:    4
+Balance:           0 CNY
+Session Inbound:   2.35 Mi
+Session Outbound:  2.33 Mi
+Session Total:     4.68 Mi
+Monthly Total:     13.28 Gi
+MAC Address:       10:20:30:40:50:60
 IP Address:        166.111.0.1
 
 Device Details:
   Device 1:
-    Rad Online ID: 355735784
-    IPv4:          59.66.0.1
-    IPv6:          2402:f000:4:1008:809:ffff:fdba:aaaa
+    Rad Online ID: 400000078
+    IPv4 Address:  59.66.0.1
+    IPv6 Address:  2402:f000::1
 
   Device 2:
-    Rad Online ID: 398436141
-    IPv4:          166.111.0.1
-    IPv6:          2402:f000:4:1007:809:3d3:76ba:aaaa
+    Rad Online ID: 400000088
+    IPv4 Address:  166.111.0.1
+    IPv6 Address:  2402:f000::2
+    Class Name:    Linux
+    OS Name:       Linux
 
 System Version:    1.01.20250403
 ```
-
-`Traffic In`, `Traffic Out`, `Traffic Sum` 统计当前登陆会话的流量, `Traffic Total` 统计本月总流量.
 
 更多参数说明请查看手册页.
 
@@ -160,6 +149,7 @@ System Version:    1.01.20250403
 - bash
 - openssl
 - curl
+- coreutils
 
 ## 可选依赖
 
@@ -177,7 +167,7 @@ System Version:    1.01.20250403
 
 - [tunet-rust](https://github.com/Berrysoft/tunet-rust)
 - [清华校园网自动连接脚本](https://github.com/WhymustIhaveaname/TsinghuaTunet)
-- [某校园网认证api分析](https://www.ciduid.top/2022/0706/school-network-auth/)
+- [某校园网认证 api 分析](https://www.ciduid.top/2022/0706/school-network-auth/)
 - [tunet-python](https://github.com/yuantailing/tunet-python/)
 - [GoAuthing](https://github.com/z4yx/GoAuthing)
 - [Tiny Encryption Algorithm - Wikipedia](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm)
@@ -185,88 +175,92 @@ System Version:    1.01.20250403
 
 ## Change Log
 
-### v1.2.9
+### 1.3.0
+
+- 应对校园网登出接口变更
+
+### 1.2.9
 
 - 修复在线设备查询错误
 
-### v1.2.8
+### 1.2.8
 
-- 在仅有 IPv6 连接下的兼容性
+- 在仅有 IP6 连接下的兼容性
 
-### v1.2.7
+### 1.2.7
 
 - 修复 Makefile 打包
 
-### v1.2.6
+### 1.2.6
 
 - 修改 Makefile 打包
 
-### v1.2.5
+### 1.2.5
 
 - 增加可选依赖: [pass](https://www.passwordstore.org/)
 - 密码可以非明文存储
 
-### v1.2.4
+### 1.2.4
 
 - 更通用的 shebang
 - 打印版本
 
-### v1.2.3
+### 1.2.3
 
 - 支持短选项组合
 - 设置 `LC_ALL=C`
 
-### v1.2.2
+### 1.2.2
 
 - 修复 `-a auto` 条件判断
 
-### v1.2.1
+### 1.2.1
 
 - MAC, 在线设备数, 余额查询
 
-### v1.2.0
+### 1.2.0
 
 - 支持 `--date-format` 选项
 - 替换 `--v4`, `--v6` 选项为 `--auth`
 - 允许自动确定 auth4 或 auth6
 
-### v1.1.1
+### 1.1.1
 
 - 修复短选项解析错误
 
-### v1.1.0
+### 1.1.0
 
 - 在线时间, 流量等查询
 - 指定 auth4 或 auth6
 
-### v1.0.1
+### 1.0.1
 
 - 合并 `tea.sh`, `tunet-bash.sh`
 - 短选项支持
 
-### v1.0.0
+### 1.0.0
 
 - 将 `tea.cpp` 部分换为 Bash 实现
 
-### v0.3.0
+### 0.3.0
 
 - 更改命令格式
 - 更改安装路径
 - 增加 man 手册页
 
-### v0.2.3
+### 0.2.3
 
 - 不再依赖 jq 解析 json
 
-### v0.2.2
+### 0.2.2
 
 - 修复未登录下没有设置 v4 或 v6 的问题
 
-### v0.2.1
+### 0.2.1
 
 - 修复有线网 auth6 跳转
 
-### v0.2.0
+### 0.2.0
 
 - 针对校园网 2025-01-15 的升级, 更新获取 ac_id 的逻辑
 - 针对校园网 2025-01-15 的升级, 更新 whoami 查询的逻辑

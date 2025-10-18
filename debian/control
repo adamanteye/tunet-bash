@@ -10,7 +10,7 @@ Rules-Requires-Root: no
 Package: tunet-bash
 Architecture: all
 Multi-Arch: foreign
-Depends: bash, curl, openssl, ${misc:Depends}
+Depends: coreutils, bash, curl, openssl, ${misc:Depends}
 Suggests: pass
 Recommends: jq
 Description: Tsinghua University network authentication script

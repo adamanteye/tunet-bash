@@ -1,15 +1,19 @@
-#!/bin/env bash
+#!/bin/bash
 
 set -o pipefail
 
-export LC_ALL=C.UTF-8
+LC_ALL=C.UTF-8
 
 NAME='tunet-bash'
-VERSION='1.2.9'
+VERSION='1.3.0'
 
-AUTH4_LOG_URL='https://auth.tsinghua.edu.cn/cgi-bin/srun_portal'
+AUTH4_LOGIN_URL='https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal'
+AUTH4_LOGOUT_URL='https://auth.tsinghua.edu.cn/cgi-bin/rad_user_dm'
+AUTH4_WEB_URL='https://auth4.tsinghua.edu.cn/srun_portal_pc'
 AUTH4_CHALLENGE_URL='https://auth.tsinghua.edu.cn/cgi-bin/get_challenge'
-AUTH6_LOG_URL='https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal'
+AUTH6_LOGIN_URL='https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal'
+AUTH6_LOGOUT_URL='https://auth6.tsinghua.edu.cn/cgi-bin/rad_user_dm'
+AUTH6_WEB_URL='https://auth6.tsinghua.edu.cn/srun_portal_pc'
 AUTH6_CHALLENGE_URL='https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge'
 TUNET_USER_INFO_URL='https://login.tsinghua.edu.cn/cgi-bin/rad_user_info'
 TUNET_USER_INFO_JSON_URL="${TUNET_USER_INFO_URL}?callback=any"
@@ -20,19 +24,15 @@ REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 KEY_ARRAY_LENGTH=4
 
 CACHE_DIR="$HOME/.cache/$NAME"
-LOG_LEVEL=${TUNET_LOG_LEVEL:-'info'}
+LOG_LEVEL=${LOG:-'info'}
 
 key_array=()
 data_array=()
 
 verbose=0
 ipv=4
-date_format='--rfc-3339 s'
+date_format='--iso-8601=seconds'
 op='whoami'
-
-USERNAME="$TUNET_USERNAME"
-PASSWORD="$TUNET_PASSWORD"
-PASSNAME="$TUNET_PASSNAME"
 
 fill_key() {
 	local key="$1"
@@ -121,7 +121,7 @@ log_date() {
 
 config_log() {
 	if [ $verbose == 1 ]; then
-		$LOG_LEVEL="debug"
+		LOG_LEVEL="debug"
 	fi
 }
 
@@ -145,7 +145,7 @@ log_info() {
 check_user() {
 	USERNAME=${USERNAME:-"$TUNET_USERNAME"}
 	if [ -z $USERNAME ]; then
-		log_error "TUNET_USERNAME is not set"
+		log_error "please configure username"
 		exit 1
 	fi
 }
@@ -155,16 +155,18 @@ check_pass() {
 	PASSWORD=${PASSWORD:-"$TUNET_PASSWORD"}
 	if [ -z $PASSNAME ]; then
 		if [ -z $PASSWORD ]; then
-			log_error "TUNET_PASSWORD is not set"
+			log_error "please configure password"
 			exit 1
+		else
+			PASSWORD="$(echo -n $PASSWORD | base64 -d)"
 		fi
 	else
+		log_debug "passname: $PASSNAME"
 		PASSWORD="$(pass show "$PASSNAME")"
 	fi
 }
 
 fetch_ac_id() {
-	log_debug "fetch ac_id"
 	local res=$(curl -s $REDIRECT_URL)
 	[[ $res =~ $REGEX_AC_ID ]]
 	local ac_id=${BASH_REMATCH[1]}
@@ -172,18 +174,16 @@ fetch_ac_id() {
 		log_debug "ac_id not found, using 1 as default"
 		echo "1"
 	else
-		log_debug "get ac_id from $REDIRECT_URL: $ac_id"
+		log_debug "ac_id: $ac_id"
 		echo $ac_id
 	fi
 }
 
 fetch_challenge() {
-	log_debug "fetch challenge v$ipv"
 	local AUTH_CHALLENGE_URL=$([ $ipv == 6 ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
-	local res=$(curl -s $AUTH_CHALLENGE_URL --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=" --data-urlencode "callback=callback")
+	local res=$(curl -s $AUTH_CHALLENGE_URL --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=$1" --data-urlencode "callback=callback")
 	local REGEX_CHALLENGE='"challenge":"([^"]+)"'
-	[[ $res =~ $REGEX_CHALLENGE ]]
-	local challenge=${BASH_REMATCH[1]}
+	[[ $res =~ $REGEX_CHALLENGE ]] && local challenge=${BASH_REMATCH[1]}
 	echo $challenge
 }
 
@@ -200,43 +200,64 @@ post_info() {
 		'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
 }
 
+check_perm() {
+	if [ -f "$CACHE_DIR/passwd" ]; then
+		if [ $(stat -c "%a" "$CACHE_DIR/passwd") != "600" ]; then
+			log_error "permission is too open: $CACHE_DIR/passwd"
+			exit 1
+		else
+			source "$CACHE_DIR/passwd"
+		fi
+	fi
+}
+
 login() {
-	[ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
+	check_perm
 	check_user
 	check_pass
-	log_debug "begin auth$ipv login"
+	log_info "auth$ipv login"
+	log_debug "username: $USERNAME"
 	local ac_id=$(fetch_ac_id)
-	local challenge=$(fetch_challenge "$ipv")
-	log_debug "challenge: $challenge"
-	local info="{SRBX1}$(post_info $challenge $ac_id)"
+	local n="200"
+	local type="1"
+	local AUTH_WEB_URL=$([ $ipv == 6 ] && echo $AUTH6_WEB_URL || echo $AUTH4_WEB_URL)
+	local res=$(curl -s "$AUTH_WEB_URL" \
+		--data-urlencode "theme=pro" \
+		--data-urlencode "ac_id=$ac_id")
+	local REGEX_IP='ip[[:space:]]*\:[[:space:]]*"([a-f0-9\.\:]+)"'
+	[[ $res =~ $REGEX_IP ]] && local ip=${BASH_REMATCH[1]}
+	log_debug "ip: $ip"
+	local token=$(fetch_challenge "$ip")
+	log_debug "token: $token"
+	local info="{SRBX1}$(post_info $token $ac_id)"
 	log_debug "info: $info"
-	local password_md5=$(gen_hmacmd5 $challenge)
+	local password_md5=$(gen_hmacmd5 $token)
 	log_debug "password_md5: {MD5}$password_md5"
-	local checksum="$challenge$USERNAME$challenge$password_md5$challenge$ac_id$challenge${challenge}200${challenge}1$challenge$info"
-	checksum=$(echo -n $checksum | openssl sha1 -hex -r | cut -d ' ' -f 1)
+	local AUTH_LOGIN_URL=$([ $ipv == 6 ] && echo $AUTH6_LOGIN_URL || echo $AUTH4_LOGIN_URL)
+	local checksum="$token$USERNAME$token$password_md5$token$ac_id$token$ip$token$n$token$type$token$info"
+	checksum=$(echo -n $checksum | sha1sum -z | cut -d ' ' -f 1)
 	log_debug "checksum: $checksum"
-	log_debug "make login request"
-	local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
-	local response=$(curl -s -X POST $AUTH_LOG_URL \
-		-H "Content-Type: application/x-www-form-urlencoded" \
+	local res=$(curl -s "$AUTH_LOGIN_URL" \
 		--data-urlencode "action=login" \
 		--data-urlencode "ac_id=$ac_id" \
 		--data-urlencode "double_stack=1" \
-		--data-urlencode "n=200" \
-		--data-urlencode "type=1" \
+		--data-urlencode "n=$n" \
+		--data-urlencode "ip=$ip" \
+		--data-urlencode "type=$type" \
+		--data-urlencode "os=Linux" \
+		--data-urlencode "name=Linux" \
 		--data-urlencode "username=$USERNAME" \
 		--data-urlencode "password={MD5}$password_md5" \
 		--data-urlencode "info=$info" \
 		--data-urlencode "chksum=$checksum" \
 		--data-urlencode "callback=callback")
-	log_debug "post $AUTH_LOG_URL: $response"
+	log_debug "$AUTH_LOGIN_URL: \"$res\""
 	local REGEX_SUC_MSG='"suc_msg":"([^"]+)"'
-	[[ $response =~ $REGEX_SUC_MSG ]]
-	local suc_msg=${BASH_REMATCH[1]}
+	[[ $res =~ $REGEX_SUC_MSG ]] && local suc_msg=${BASH_REMATCH[1]}
 	if [ "$suc_msg" != "login_ok" ]; then
 		if [ -z $suc_msg ]; then
-			local REGEX_ERR_MSG='"error_msg":"([^"]+)"'
-			[[ $response =~ $REGEX_ERR_MSG ]]
+			local REGEX_ERR_MSG='"error":"([^"]+)"'
+			[[ $res =~ $REGEX_ERR_MSG ]]
 			local err_msg=${BASH_REMATCH[1]}
 			log_error "$err_msg"
 		else
@@ -250,26 +271,33 @@ login() {
 }
 
 logout() {
-	[ -f "$CACHE_DIR/passwd" ] && source "$CACHE_DIR/passwd"
+	check_perm
 	check_user
-	log_debug "begin auth$ipv logout"
-	local AUTH_LOG_URL=$([ $ipv == 6 ] && echo $AUTH6_LOG_URL || echo $AUTH4_LOG_URL)
-	local response=$(curl -s -X POST $AUTH_LOG_URL \
-		-H "Content-Type: application/x-www-form-urlencoded" \
-		--data-urlencode "action=logout" \
-		--data-urlencode "ac_id=1" \
-		--data-urlencode "double_stack=1" \
+	log_info "auth$ipv logout"
+	log_debug "username: $USERNAME"
+	local AUTH_LOGOUT_URL=$([ $ipv == 6 ] && echo $AUTH6_LOGOUT_URL || echo $AUTH4_LOGOUT_URL)
+	local time=$(date +%s)
+	local res=$(curl -s $TUNET_USER_INFO_URL)
+	local ip=$(echo $res | cut -d ',' -f9)
+	local unbind="1"
+	local sign=$(echo -n "$time$USERNAME$ip$unbind$time" | sha1sum -z | cut -d ' ' -f 1)
+	if [ -z "$ip" ]; then
+		log_error "not online"
+		exit 1
+	fi
+	local response=$(curl -s $AUTH_LOGOUT_URL \
+		--data-urlencode "unbind=1" \
+		--data-urlencode "time=$time" \
+		--data-urlencode "ip=$ip" \
+		--data-urlencode "sign=$sign" \
 		--data-urlencode "username=$USERNAME" \
 		--data-urlencode "callback=callback")
-	log_debug "post $AUTH_LOG_URL: $response"
+	log_debug "$AUTH_LOGOUT_URL: \"$response\""
 	local REGEX_SUC_MSG='"error":"([^"]+)"'
 	[[ $response =~ $REGEX_SUC_MSG ]]
 	local suc_msg=${BASH_REMATCH[1]}
 	if [ "$suc_msg" != "ok" ]; then
-		local REGEX_ERROR_MSG='"error_msg":"([^"]+)"'
-		[[ $response =~ $REGEX_ERROR_MSG ]]
-		local error_msg=${BASH_REMATCH[1]}
-		log_error "$error_msg"
+		log_error "$suc_msg"
 		exit 1
 	else
 		log_info "$suc_msg"
@@ -279,10 +307,10 @@ logout() {
 
 whoami() {
 	local res=$(curl -s $TUNET_USER_INFO_URL)
-	log_debug "get $TUNET_USER_INFO_URL: $res"
+	log_debug "$TUNET_USER_INFO_URL: \"$res\""
 	local cnt=$(echo $res | tr ',' '\n' | wc -l)
 	if [ $cnt != 22 ]; then
-		log_error "expect 22 fields, get $cnt: $res"
+		log_error "possibly not online"
 		exit 1
 	else
 		local user=$(echo $res | cut -d ',' -f1)
@@ -291,7 +319,7 @@ whoami() {
 			local online=$(echo $res | cut -d ',' -f3)
 			local online=$((online - login))
 			local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
-			local login=$(date -d "@$login" --rfc-3339 s)
+			local login=$(date -d "@$login" "$date_format")
 			local in=$(echo $res | cut -d ',' -f4)
 			local out=$(echo $res | cut -d ',' -f5)
 			local tot=$(echo $res | cut -d ',' -f7)
@@ -313,16 +341,16 @@ whoami() {
 			local mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
 			local label_width=18
 			printf "%-${label_width}s %s\n" "Username:" "$user"
-			printf "%-${label_width}s %s\n" "Login Time:" "$login"
-			printf "%-${label_width}s %s h\n" "Age:" "$online"
-			printf "%-${label_width}s %s\n" "Billing Name:" "$billing_name"
-			printf "%-${label_width}s %s\n" "Products Name:" "$products_name"
-			printf "%-${label_width}s %s\n" "Device Online:" "$device"
-			printf "%-${label_width}s %s CNY\n" "User Balance:" "$balance"
-			printf "%-${label_width}s %s Mi\n" "Traffic In:" "$in"
-			printf "%-${label_width}s %s Mi\n" "Traffic Out:" "$out"
-			printf "%-${label_width}s %s Mi\n" "Traffic Sum:" "$sum"
-			printf "%-${label_width}s %s Gi\n" "Traffic Total:" "$tot"
+			printf "%-${label_width}s %s\n" "Session Start:" "$login"
+			printf "%-${label_width}s %s h\n" "Session Age:" "$online"
+			printf "%-${label_width}s %s\n" "Billing Profile:" "$billing_name"
+			printf "%-${label_width}s %s\n" "Product Plan:" "$products_name"
+			printf "%-${label_width}s %s\n" "Online Devices:" "$device"
+			printf "%-${label_width}s %s CNY\n" "Balance:" "$balance"
+			printf "%-${label_width}s %s Mi\n" "Session Inbound:" "$in"
+			printf "%-${label_width}s %s Mi\n" "Session Outbound:" "$out"
+			printf "%-${label_width}s %s Mi\n" "Session Total:" "$sum"
+			printf "%-${label_width}s %s Gi\n" "Monthly Total:" "$tot"
 			printf "%-${label_width}s %s\n" "MAC Address:" "$mac"
 			printf "%-${label_width}s %s\n" "IP Address:" "$ip"
 			if command -v jq >/dev/null 2>&1; then
@@ -339,8 +367,8 @@ whoami() {
 						local field_width=$((label_width - 4))
 						printf "${device_indent}Device %d:\n" "$device_num"
 						printf "${field_indent}%-${field_width}s %s\n" "Rad Online ID:" "$device_id"
-						printf "${field_indent}%-${field_width}s %s\n" "IPv4:" "${device_ip:-N/A}"
-						printf "${field_indent}%-${field_width}s %s\n" "IPv6:" "${device_ip6:-N/A}"
+						printf "${field_indent}%-${field_width}s %s\n" "IPv4 Address:" "${device_ip:-N/A}"
+						printf "${field_indent}%-${field_width}s %s\n" "IPv6 Address:" "${device_ip6:-N/A}"
 						[ -n "$device_class" ] && [ "$device_class" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "Class Name:" "$device_class"
 						[ -n "$device_os" ] && [ "$device_os" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "OS Name:" "$device_os"
 						echo
@@ -369,21 +397,21 @@ config() {
 	while [[ -z $USERNAME ]]; do
 		read -p "username: " USERNAME
 	done
-	echo "export TUNET_USERNAME=$USERNAME" >$CACHE_DIR/passwd
+	echo "export TUNET_USERNAME=$USERNAME" >"$CACHE_DIR/passwd"
 	if [[ $use_passname = "yes" ]]; then
 		while [[ -z $PASSNAME ]]; do
 			read -p "passname: " PASSNAME
 		done
-		echo "export TUNET_PASSNAME=$PASSNAME" >>$CACHE_DIR/passwd
+		echo "export TUNET_PASSNAME=$PASSNAME" >>"$CACHE_DIR/passwd"
 	else
 
 		while [[ -z $PASSWORD ]]; do
 			read -s -p "password: " PASSWORD
 			echo
 		done
-		echo "export TUNET_PASSWORD=$PASSWORD" >>$CACHE_DIR/passwd
+		echo "export TUNET_PASSWORD=$(echo -n $PASSWORD | base64)" >>"$CACHE_DIR/passwd"
 	fi
-	chmod 600 $CACHE_DIR/passwd
+	chmod 600 "$CACHE_DIR/passwd"
 }
 
 preprocess_args() {
@@ -461,6 +489,10 @@ while [[ $# -gt 0 ]]; do
 			echo "$NAME $VERSION"
 			exit 0
 			;;
+		-h | --help)
+			man tunet-bash
+			exit 0
+			;;
 		--pass)
 			use_passname="yes"
 			shift
@@ -488,7 +520,7 @@ if [ "$ipv" = "auto" ]; then
 fi
 
 if [[ "$ipv" != "4" ]] && [[ $ipv != "6" ]]; then
-	echo "Unknown auth method: $ipv" >&2
+	echo "Unknown auth version: $ipv" >&2
 	exit 1
 fi
 

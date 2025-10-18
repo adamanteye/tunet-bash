@@ -1,22 +1,24 @@
+.DELETE_ON_ERROR:
 .PHONY: install uninstall clean
 
 prefix := $(HOME)/.local
+package := tunet-bash
 
-install: tunet-bash.1.gz
-	@install -Dm755 tunet-bash.sh $(DESTDIR)$(prefix)/bin/tunet-bash
-	@install -Dm644 tunet-bash.1.gz $(DESTDIR)$(prefix)/share/man/man1/tunet-bash.1.gz
-	@install -Dm644 completions/tunet-bash.fish $(DESTDIR)$(prefix)/share/fish/vendor_completions.d/tunet-bash.fish
-	@install -Dm644 completions/tunet-bash $(DESTDIR)$(prefix)/share/bash-completion/completions/tunet-bash
+install: $(package).1.gz
+	@install -Dm755 $(package).sh $(destdir)$(prefix)/bin/$(package)
+	@install -Dm644 $(package).1.gz $(destdir)$(prefix)/share/man/man1/$(package).1.gz
+	@install -Dm644 completions/$(package).fish $(destdir)$(prefix)/share/fish/vendor_completions.d/$(package).fish
 
 clean:
-	@rm -f tunet-bash.1.gz
+	@rm -f $(package).1.gz
 
 uninstall:
-	@rm -f $(DESTDIR)$(prefix)/bin/tunet-bash
-	@rm -f $(DESTDIR)$(prefix)/share/man/man1/tunet-bash.1.gz
-	@rm -f $(DESTDIR)$(prefix)/share/fish/vendor_completions.d/tunet-bash.fish
-	@rm -f $(DESTDIR)$(prefix)/share/bash-completion/completions/tunet-bash
+	@rm -f $(destdir)$(prefix)/bin/$(package)
+	@rm -f $(destdir)$(prefix)/share/man/man1/$(package).1.gz
+	@rm -f $(destdir)$(prefix)/share/fish/vendor_completions.d/$(package).fish
 
-tunet-bash.1.gz: man/tunet-bash.1.scd
-	@scdoc < man/tunet-bash.1.scd > tunet-bash.1
-	@gzip tunet-bash.1 -f
+$(package).1: man/$(package).1.scd
+	@scdoc < man/$(package).1.scd > $(package).1
+
+$(package).1.gz: $(package).1
+	@gzip $(package).1 -f

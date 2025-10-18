@@ -3,4 +3,4 @@
 %:
 	dh $@
 override_dh_auto_install:
-	make DESTDIR=$(CURDIR)/debian/tunet-bash prefix=/usr install
+	make destdir=$(CURDIR)/debian/tunet-bash prefix=/usr install

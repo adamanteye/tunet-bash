@@ -6,10 +6,10 @@ tunet-bash - Tsinghua University network authentication utility
 
 # SYNOPSIS
 
-*tunet-bash* -c [--pass] [--date-format _ARG_]++
-*tunet-bash* -i [-a auto|4|6] [--date-format _ARG_]++
-*tunet-bash* -o [-a auto|4|6] [--date-format _ARG_]++
-*tunet-bash* -w [-v] [--date-format _ARG_]++
+*tunet-bash* --config [--pass] [--date-format _ARG_] [-v]++
+*tunet-bash* --login [--auth auto|4|6] [--date-format _ARG_] [-v]++
+*tunet-bash* --logout [--auth auto|4|6] [--date-format _ARG_] [-v]++
+*tunet-bash* --whoami [--date-format _ARG_] [-v]++
 *tunet-bash* --version
 
 # DESCRIPTION
@@ -41,7 +41,7 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 *-v*, *--verbose*
 	Display detailed statistics when used with *-w*, *--whoami*.
 
-	Shows comprehensive information including device details, traffic usage, and connection history.
+	Set log level to _debug_.
 
 *-a*, *--auth* _IP_VERSION_
 	Specify the authentication protocol version.
@@ -60,7 +60,7 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 *--date-format* _DATE_FORMAT_
 	Specify the date format string passed to the *date* command for log timestamps.
 
-	Default value is _"--rfc-3339 s"_.
+	Default value is _"--iso-8601=seconds"_.
 
 *--version*
 	Display version information and exit.
@@ -84,28 +84,28 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 
 # ENVIRONMENT
 
-*TUNET_LOG_LEVEL*
+*LOG*
 	Control the verbosity of log messages.
 
 	Valid values: _debug_, _info_, _error_.
 
 	If set to any other value, no log messages will be displayed.
 
-*TUNET_USERNAME*
+*USERNAME*
 	Override the username stored in _$HOME/.cache/tunet-bash/passwd_.
 
-*TUNET_PASSWORD*
+*PASSWORD*
 	Override the password stored in _$HOME/.cache/tunet-bash/passwd_.
 
-*TUNET_PASSNAME*
+*PASSNAME*
 	Override the pass-name stored in _$HOME/.cache/tunet-bash/passwd_.
 
-	When this is set, *TUNET_PASSWORD* is ignored in favor of retrieving the password from the pass store.
+	When this is set, *PASSWORD* is ignored in favor of retrieving the password from the pass store.
 
 # FILES
 
 _$HOME/.cache/tunet-bash/passwd_
-	Stores user credentials including username, password, or pass-name.
+	Stores user credentials including username, password, or passname.
 
 	This file is created with restricted permissions (600) for security.
 
