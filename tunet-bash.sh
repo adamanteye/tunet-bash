@@ -272,9 +272,9 @@ login() {
 	local token=$(fetch_challenge "$ip")
 	log_debug "token: $token"
 	local info="{SRBX1}$(post_info $token $ac_id)"
-	log_debug "info: $info"
+	log_debug "info: <edited>"
 	local password_md5=$(gen_hmacmd5 $token)
-	log_debug "password_md5: {MD5}$password_md5"
+	log_debug "password_md5: {MD5}<edited>"
 	local AUTH_LOGIN_URL=$(auth_url login)
 	local checksum="$token$USERNAME$token$password_md5$token$ac_id$token$ip$token$n$token$type$token$info"
 	checksum=$(echo -n $checksum | sha1sum -z | cut -d ' ' -f 1)
