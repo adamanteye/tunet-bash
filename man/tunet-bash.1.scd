@@ -7,8 +7,8 @@ tunet-bash - Tsinghua University network authentication utility
 # SYNOPSIS
 
 *tunet-bash* --config [--pass] [--date-format _ARG_] [-v]++
-*tunet-bash* --login [--auth auto|4|6] [--date-format _ARG_] [-v]++
-*tunet-bash* --logout [--auth auto|4|6] [--date-format _ARG_] [-v]++
+*tunet-bash* --login [--auth auto|4|6|either] [--date-format _ARG_] [-v]++
+*tunet-bash* --logout [--auth auto|4|6|either] [--date-format _ARG_] [-v]++
 *tunet-bash* --whoami [--date-format _ARG_] [-v]++
 *tunet-bash* --version
 
@@ -46,11 +46,12 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 *-a*, *--auth* _IP_VERSION_
 	Specify the authentication protocol version.
 
-	Valid values for _IP_VERSION_ are _auto_, _4_, or _6_.
+	Valid values for _IP_VERSION_ are as follows:
 
 	- _auto_: Automatically detect the appropriate version (default)
 	- _4_: Enforce IPv4 authentication (auth4.tsinghua.edu.cn)
 	- _6_: Enforce IPv6 authentication (auth6.tsinghua.edu.cn)
+	- _either_: Use the default authentication server (auth.tsinghua.edu.cn)
 
 *--pass*
 	Use the pass password manager (_https://www.passwordstore.org/_) when configuring credentials with *-c*, *--config*.

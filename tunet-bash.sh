@@ -9,16 +9,9 @@ NAME='tunet-bash'
 VERSION='1.3.0'
 
 REDIRECT_URL='http://info.tsinghua.edu.cn/'
-AUTH4_LOGIN_URL='https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal'
-AUTH4_LOGOUT_URL='https://auth.tsinghua.edu.cn/cgi-bin/rad_user_dm'
-AUTH4_WEB_URL='https://auth4.tsinghua.edu.cn/srun_portal_pc'
-AUTH4_CHALLENGE_URL='https://auth.tsinghua.edu.cn/cgi-bin/get_challenge'
-AUTH6_LOGIN_URL='https://auth6.tsinghua.edu.cn/cgi-bin/srun_portal'
-AUTH6_LOGOUT_URL='https://auth6.tsinghua.edu.cn/cgi-bin/rad_user_dm'
-AUTH6_WEB_URL='https://auth6.tsinghua.edu.cn/srun_portal_pc'
-AUTH6_CHALLENGE_URL='https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge'
-TUNET_USER_INFO_URL='https://login.tsinghua.edu.cn/cgi-bin/rad_user_info'
-TUNET_USER_INFO_JSON_URL="${TUNET_USER_INFO_URL}?callback=any"
+TUNET_BASE_AUTH4='https://auth4.tsinghua.edu.cn'
+TUNET_BASE_AUTH6='https://auth6.tsinghua.edu.cn'
+TUNET_BASE_AUTH='https://auth.tsinghua.edu.cn'
 REGEX_USER_INFO_JSON='"billing_name":"([^"]+)".*"online_device_total":"([^"]+)"[^}]*"products_name":"([^"]+)"[^}]*"sysver":"([^"]+)"[^}]*"user_balance":([^,]+)[^}]*"user_mac":"([^"]+)"'
 REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
@@ -31,9 +24,57 @@ key_array=()
 data_array=()
 
 verbose=0
-ipv=4
+ipv=auto
 date_format='--iso-8601=seconds'
 op='whoami'
+
+auth_url() {
+	local kind="$1"
+	case "$kind" in
+		login)
+			if [[ "$ipv" == "6" ]]; then
+				echo "$TUNET_BASE_AUTH6/cgi-bin/srun_portal"
+			elif [[ "$ipv" == "4" ]]; then
+				echo "$TUNET_BASE_AUTH4/cgi-bin/srun_portal"
+			else
+				echo "$TUNET_BASE_AUTH/cgi-bin/srun_portal"
+			fi
+			;;
+		logout)
+			if [[ "$ipv" == "6" ]]; then
+				echo "$TUNET_BASE_AUTH6/cgi-bin/rad_user_dm"
+			elif [[ "$ipv" == "4" ]]; then
+				echo "$TUNET_BASE_AUTH4/cgi-bin/rad_user_dm"
+			else
+				echo "$TUNET_BASE_AUTH/cgi-bin/rad_user_dm"
+			fi
+			;;
+		web)
+			if [[ "$ipv" == "6" ]]; then
+				echo "$TUNET_BASE_AUTH6/srun_portal_pc"
+			elif [[ "$ipv" == "4" ]]; then
+				echo "$TUNET_BASE_AUTH4/srun_portal_pc"
+			else
+				echo "$TUNET_BASE_AUTH/srun_portal_pc"
+			fi
+			;;
+		challenge)
+			if [[ "$ipv" == "6" ]]; then
+				echo "$TUNET_BASE_AUTH6/cgi-bin/get_challenge"
+			elif [[ "$ipv" == "4" ]]; then
+				echo "$TUNET_BASE_AUTH4/cgi-bin/get_challenge"
+			else
+				echo "$TUNET_BASE_AUTH/cgi-bin/get_challenge"
+			fi
+			;;
+		user-info)
+			echo "$TUNET_BASE_AUTH/cgi-bin/rad_user_info"
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
 
 fill_key() {
 	local key="$1"
@@ -139,7 +180,7 @@ log_debug() {
 
 log_info() {
 	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ]; then
-		echo -e "$(log_date) INFO $1" >&2
+		echo -e "$(log_date) INFO  $1" >&2
 	fi
 }
 
@@ -181,8 +222,8 @@ fetch_ac_id() {
 }
 
 fetch_challenge() {
-	local AUTH_CHALLENGE_URL=$([ $ipv == 6 ] && echo $AUTH6_CHALLENGE_URL || echo $AUTH4_CHALLENGE_URL)
-	local res=$(curl -s $AUTH_CHALLENGE_URL --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=$1" --data-urlencode "callback=callback")
+	local AUTH_CHALLENGE_URL=$(auth_url challenge)
+	local res=$(curl -s "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=$1" --data-urlencode "callback=callback")
 	local REGEX_CHALLENGE='"challenge":"([^"]+)"'
 	[[ $res =~ $REGEX_CHALLENGE ]] && local challenge=${BASH_REMATCH[1]}
 	echo $challenge
@@ -216,12 +257,12 @@ login() {
 	check_perm
 	check_user
 	check_pass
-	log_info "auth$ipv login"
+	log_info "auth($ipv) login"
 	log_debug "username: $USERNAME"
 	local ac_id=$(fetch_ac_id)
 	local n="200"
 	local type="1"
-	local AUTH_WEB_URL=$([ $ipv == 6 ] && echo $AUTH6_WEB_URL || echo $AUTH4_WEB_URL)
+	local AUTH_WEB_URL=$(auth_url web)
 	local res=$(curl -s "$AUTH_WEB_URL" \
 		--data-urlencode "theme=pro" \
 		--data-urlencode "ac_id=$ac_id")
@@ -234,7 +275,7 @@ login() {
 	log_debug "info: $info"
 	local password_md5=$(gen_hmacmd5 $token)
 	log_debug "password_md5: {MD5}$password_md5"
-	local AUTH_LOGIN_URL=$([ $ipv == 6 ] && echo $AUTH6_LOGIN_URL || echo $AUTH4_LOGIN_URL)
+	local AUTH_LOGIN_URL=$(auth_url login)
 	local checksum="$token$USERNAME$token$password_md5$token$ac_id$token$ip$token$n$token$type$token$info"
 	checksum=$(echo -n $checksum | sha1sum -z | cut -d ' ' -f 1)
 	log_debug "checksum: $checksum"
@@ -252,10 +293,11 @@ login() {
 		--data-urlencode "info=$info" \
 		--data-urlencode "chksum=$checksum" \
 		--data-urlencode "callback=callback")
-	log_debug "$AUTH_LOGIN_URL: \"$res\""
+
 	local REGEX_SUC_MSG='"suc_msg":"([^"]+)"'
 	[[ $res =~ $REGEX_SUC_MSG ]] && local suc_msg=${BASH_REMATCH[1]}
 	if [ "$suc_msg" != "login_ok" ]; then
+		log_debug "$AUTH_LOGIN_URL: \"$res\""
 		if [ -z $suc_msg ]; then
 			local REGEX_ERR_MSG='"error":"([^"]+)"'
 			[[ $res =~ $REGEX_ERR_MSG ]]
@@ -274,13 +316,14 @@ login() {
 logout() {
 	check_perm
 	check_user
-	log_info "auth$ipv logout"
+	log_info "auth($ipv) logout"
 	log_debug "username: $USERNAME"
-	local AUTH_LOGOUT_URL=$([ $ipv == 6 ] && echo $AUTH6_LOGOUT_URL || echo $AUTH4_LOGOUT_URL)
+	local AUTH_LOGOUT_URL=$(auth_url logout)
 	local time=$(date +%s)
-	local res=$(curl -s $TUNET_USER_INFO_URL)
+	local res=$(curl -s "$(auth_url user-info)")
 	local ip=$(echo $res | cut -d ',' -f9)
 	local unbind="1"
+	log_debug "ip: $ip"
 	local sign=$(echo -n "$time$USERNAME$ip$unbind$time" | sha1sum -z | cut -d ' ' -f 1)
 	if [ -z "$ip" ]; then
 		log_error "not online"
@@ -293,11 +336,12 @@ logout() {
 		--data-urlencode "sign=$sign" \
 		--data-urlencode "username=$USERNAME" \
 		--data-urlencode "callback=callback")
-	log_debug "$AUTH_LOGOUT_URL: \"$response\""
+
 	local REGEX_SUC_MSG='"error":"([^"]+)"'
 	[[ $response =~ $REGEX_SUC_MSG ]]
 	local suc_msg=${BASH_REMATCH[1]}
 	if [ "$suc_msg" != "ok" ]; then
+		log_debug "$AUTH_LOGOUT_URL: \"$response\""
 		log_error "$suc_msg"
 		exit 1
 	else
@@ -307,8 +351,7 @@ logout() {
 }
 
 whoami() {
-	local res=$(curl -s $TUNET_USER_INFO_URL)
-	log_debug "$TUNET_USER_INFO_URL: \"$res\""
+	local res=$(curl -s "$(auth_url user-info)")
 	local cnt=$(echo $res | tr ',' '\n' | wc -l)
 	if [ $cnt != 22 ]; then
 		log_error "possibly not online"
@@ -330,9 +373,8 @@ whoami() {
 			local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
 			local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
 			local ip=$(echo $res | cut -d ',' -f9)
-			local res=$(curl -s $TUNET_USER_INFO_JSON_URL)
+			local res=$(curl -s "$(auth_url user-info)?callback=any")
 			[[ $res =~ $REGEX_USER_INFO_JSON ]]
-			log_debug "get $TUNET_USER_INFO_JSON_URL: $res"
 			local billing_name=${BASH_REMATCH[1]}
 			local device=${BASH_REMATCH[2]}
 			local products_name=${BASH_REMATCH[3]}
@@ -380,7 +422,7 @@ whoami() {
 					printf "%-${label_width}s %s\n" "Device Details:" "${dim}No details available${reset}"
 				fi
 			else
-				log_debug "jq not found, skipping device details parsing"
+				log_info "jq not found, skipping device details parsing"
 			fi
 			printf "%-${label_width}s %s\n" "System Version:" "$sysver"
 		else
@@ -400,7 +442,7 @@ config() {
 		read -p "username: " USERNAME
 	done
 	echo "export TUNET_USERNAME=$USERNAME" >"$CACHE_DIR/passwd"
-	if [[ $use_passname = "yes" ]]; then
+	if [[ "$use_passname" == "yes" ]]; then
 		while [[ -z $PASSNAME ]]; do
 			read -p "passname: " PASSNAME
 		done
@@ -506,20 +548,20 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-if [ "$ipv" = "auto" ]; then
+config_log
+
+if [ $ipv == "auto" ]; then
 	REGEX_IPV='//auth([46])\.tsinghua\.edu\.cn'
 	res=$(curl -s $REDIRECT_URL)
-	[[ $res =~ $REGEX_IPV ]]
-	ipv=${BASH_REMATCH[1]}
-	if [ -z $ipv ]; then
-		ipv=4
+	if [[ $res =~ $REGEX_IPV ]]; then
+		ipv="${BASH_REMATCH[1]}"
+	else
+		ipv="either"
 	fi
-	log_debug "ipv: $ipv"
 fi
 
-if [[ "$ipv" != "4" ]] && [[ $ipv != "6" ]]; then
+if [[ ! ($ipv == "4" || $ipv == "6" || "$ipv" == "either") ]]; then
 	echo "Unknown auth version: $ipv" >&2
-	exit 1
 fi
 
 case $op in
@@ -533,11 +575,9 @@ case $op in
 		whoami
 		;;
 	login)
-		config_log
 		login
 		;;
 	logout)
-		config_log
 		logout
 		;;
 esac

@@ -72,15 +72,8 @@ password:
 
 ```sh
 $ tunet-bash --login --auth 4
+[2025-10-18T14:14:14+08:00] INFO auth4 login
 [2025-10-18T14:14:14+08:00] INFO login_ok
-```
-
-也可以选择使用 [pass](https://www.passwordstore.org/) 存储密码:
-
-```sh
-$ tunet-bash --config --pass
-username: qingxiaohua
-passname: tsinghua/qingxiaohua
 ```
 
 查询当前登入用户:
@@ -122,6 +115,16 @@ Device Details:
 System Version:    1.01.20250403
 ```
 
+### 技巧
+
+使用 [pass](https://www.passwordstore.org/) 存储密码:
+
+```sh
+$ tunet-bash --config --pass
+username: qingxiaohua
+passname: tsinghua/qingxiaohua
+```
+
 更多参数说明请查看手册页.
 
 ### 守护登陆
@@ -136,7 +139,6 @@ System Version:    1.01.20250403
 
 - [x] Auth 4
 - [x] Auth 6
-- [ ] Net
 
 - [x] 登入登出
 - [x] 当前用户查询
@@ -175,9 +177,10 @@ System Version:    1.01.20250403
 
 ## 已知问题
 
-### 建华楼有线网 IPv6 地址为 SLAAC
+### 建华楼有线网 IPv6 同时宣告 SLAAC 以及 DHCPv6
 
-准入联动的 IPv6 地址是通过 DHCP 下发的. 而设备拿到的地址是 SLAAC 生成的.
+校园网准入联动 (srun portal) 的 IPv6 地址必须是 DHCPv6 下发的.
+但是建华楼有线网配置错误, 设备可能会错误拿到 SLAAC 地址.
 
 ## Change Log
 
