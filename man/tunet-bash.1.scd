@@ -49,8 +49,8 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 	Valid values for _IP_VERSION_ are _auto_, _4_, or _6_.
 
 	- _auto_: Automatically detect the appropriate version (default)
-	- _4_: Force IPv4 authentication (auth4.tsinghua.edu.cn)
-	- _6_: Force IPv6 authentication (auth6.tsinghua.edu.cn)
+	- _4_: Enforce IPv4 authentication (auth4.tsinghua.edu.cn)
+	- _6_: Enforce IPv6 authentication (auth6.tsinghua.edu.cn)
 
 *--pass*
 	Use the pass password manager (_https://www.passwordstore.org/_) when configuring credentials with *-c*, *--config*.

@@ -17,7 +17,7 @@
 ```sh
 curl -fsS https://gpg.adamanteye.cc/ada.pub | sudo tee /etc/apt/keyrings/debian.adamanteye.cc.asc > /dev/null
 
-cat <<EOF | sudo tee /etc/apt/sources.list.d/adamanteye.sources < /dev/null
+cat <<EOF | sudo tee /etc/apt/sources.list.d/adamanteye.sources > /dev/null
 Types: deb
 URIs: https://debian.adamanteye.cc/
 Suites: trixie
@@ -25,7 +25,7 @@ Components: main
 Signed-By: /etc/apt/keyrings/debian.adamanteye.cc.asc
 EOF
 
-cat <<EOF | sudo tee /etc/apt/preferences.d/03-adamanteye.pref < /dev/null
+cat <<EOF | sudo tee /etc/apt/preferences.d/03-adamanteye.pref > /dev/null
 Explanation: By default, discard all packages from debian.adamanteye.cc
 Package: *
 Pin: origin debian.adamanteye.cc
@@ -172,6 +172,12 @@ System Version:    1.01.20250403
 - [GoAuthing](https://github.com/z4yx/GoAuthing)
 - [Tiny Encryption Algorithm - Wikipedia](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm)
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
+
+## 已知问题
+
+### 建华楼有线网 IPv6 地址为 SLAAC
+
+准入联动的 IPv6 地址是通过 DHCP 下发的. 而设备拿到的地址是 SLAAC 生成的.
 
 ## Change Log
 

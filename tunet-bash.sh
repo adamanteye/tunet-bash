@@ -3,10 +3,12 @@
 set -o pipefail
 
 LC_ALL=C.UTF-8
+LANG=$LC_ALL
 
 NAME='tunet-bash'
 VERSION='1.3.0'
 
+REDIRECT_URL='http://info.tsinghua.edu.cn/'
 AUTH4_LOGIN_URL='https://auth4.tsinghua.edu.cn/cgi-bin/srun_portal'
 AUTH4_LOGOUT_URL='https://auth.tsinghua.edu.cn/cgi-bin/rad_user_dm'
 AUTH4_WEB_URL='https://auth4.tsinghua.edu.cn/srun_portal_pc'
@@ -18,7 +20,6 @@ AUTH6_CHALLENGE_URL='https://auth6.tsinghua.edu.cn/cgi-bin/get_challenge'
 TUNET_USER_INFO_URL='https://login.tsinghua.edu.cn/cgi-bin/rad_user_info'
 TUNET_USER_INFO_JSON_URL="${TUNET_USER_INFO_URL}?callback=any"
 REGEX_USER_INFO_JSON='"billing_name":"([^"]+)".*"online_device_total":"([^"]+)"[^}]*"products_name":"([^"]+)"[^}]*"sysver":"([^"]+)"[^}]*"user_balance":([^,]+)[^}]*"user_mac":"([^"]+)"'
-REDIRECT_URL='http://info.tsinghua.edu.cn/'
 REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
 
 KEY_ARRAY_LENGTH=4
@@ -390,7 +391,8 @@ whoami() {
 }
 
 help() {
-	man 1 "$NAME"
+	echo "See $NAME(1) for details."
+	exit 0
 }
 
 config() {
@@ -487,10 +489,6 @@ while [[ $# -gt 0 ]]; do
 			;;
 		--version)
 			echo "$NAME $VERSION"
-			exit 0
-			;;
-		-h | --help)
-			man tunet-bash
 			exit 0
 			;;
 		--pass)
