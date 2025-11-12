@@ -1,21 +1,33 @@
 .DELETE_ON_ERROR:
+MAKEFLAGS += --no-builtin-rules
+
 .PHONY: install uninstall clean
+.DEFAULT_GOAL := install
 
 prefix := $(HOME)/.local
 package := tunet-bash
+RM := rm -r
+
+bindir := $(destdir)$(prefix)/bin
+mandir := $(destdir)$(prefix)/share/man/man1
+fishcompdir := $(destdir)$(prefix)/share/fish/vendor_completions.d
 
 install: $(package).1.gz
-	@install -Dm755 $(package).sh $(destdir)$(prefix)/bin/$(package)
-	@install -Dm644 $(package).1.gz $(destdir)$(prefix)/share/man/man1/$(package).1.gz
-	@install -Dm644 completions/$(package).fish $(destdir)$(prefix)/share/fish/vendor_completions.d/$(package).fish
+	@install -d "$(bindir)" "$(mandir)" "$(fishcompdir)"
+	@install -m 755 $(package).sh "$(bindir)/$(package)"
+	@install -m 644 $(package).1.gz "$(mandir)/$(package).1.gz"
+	@install -m 644 completions/$(package).fish "$(fishcompdir)/$(package).fish"
+	@printf 'installed to %s\n' "$(destdir)$(prefix)"
 
 clean:
 	@$(RM) $(package).1.gz
+	@$(RM) $(package).1
 
 uninstall:
-	@$(RM) $(destdir)$(prefix)/bin/$(package)
-	@$(RM) $(destdir)$(prefix)/share/man/man1/$(package).1.gz
-	@$(RM) $(destdir)$(prefix)/share/fish/vendor_completions.d/$(package).fish
+	@$(RM) "$(bindir)/$(package)"
+	@$(RM) "$(mandir)/$(package).1.gz"
+	@$(RM) "$(fishcompdir)/$(package).fish"
+	@printf 'uninstalled from %s\n' "$(destdir)$(prefix)"
 
 $(package).1: man/$(package).1.scd
 	@scdoc < man/$(package).1.scd > $(package).1
