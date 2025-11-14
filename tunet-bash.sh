@@ -67,7 +67,13 @@ auth_url() {
 			fi
 			;;
 		user-info)
-			echo "$TUNET_BASE_AUTH/cgi-bin/rad_user_info"
+			if [[ "$ipv" == "6" ]]; then
+				echo "$TUNET_BASE_AUTH6/cgi-bin/rad_user_info"
+			elif [[ "$ipv" == "4" ]]; then
+				echo "$TUNET_BASE_AUTH4/cgi-bin/rad_user_info"
+			else
+				echo "$TUNET_BASE_AUTH/cgi-bin/rad_user_info"
+			fi
 			;;
 		*)
 			return 1
@@ -346,7 +352,8 @@ logout() {
 }
 
 assert() {
-	"$NAME" -w || "$NAME" -i
+	("$NAME" -w -a "$ipv" || ("$NAME" -w -a 4 || "$NAME" -w -a 6)) ||
+		"$NAME" -i -a "$ipv"
 }
 
 whoami() {
