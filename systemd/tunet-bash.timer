@@ -1,0 +1,9 @@
+[Unit]
+Description=Tsinghua University Network Authentication Timer
+
+[Timer]
+OnStartupSec=1m
+OnUnitActiveSec=2m
+
+[Install]
+WantedBy=timers.target

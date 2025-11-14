@@ -6,7 +6,7 @@ LC_ALL=C.UTF-8
 LANG=$LC_ALL
 
 NAME='tunet-bash'
-VERSION='1.3.0'
+VERSION='1.3.1'
 
 REDIRECT_URL='http://info.tsinghua.edu.cn/'
 TUNET_BASE_AUTH4='https://auth4.tsinghua.edu.cn'
@@ -25,7 +25,6 @@ data_array=()
 
 verbose=0
 ipv=auto
-date_format='--iso-8601=seconds'
 op='whoami'
 
 auth_url() {
@@ -157,10 +156,6 @@ tea() {
 	encode
 }
 
-log_date() {
-	echo "[$(date $date_format)]"
-}
-
 config_log() {
 	if [ $verbose == 1 ]; then
 		LOG_LEVEL="debug"
@@ -170,17 +165,17 @@ config_log() {
 log_error() {
 	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ] ||
 		[ $LOG_LEVEL == "error" ]; then
-		echo "$(log_date) ERROR $1" >&2
+		echo "ERROR $1" >&2
 	fi
 }
 
 log_debug() {
-	[ $LOG_LEVEL == "debug" ] && echo -e "$(log_date) DEBUG $1" >&2
+	[ $LOG_LEVEL == "debug" ] && echo -e "DEBUG $1" >&2
 }
 
 log_info() {
 	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ]; then
-		echo -e "$(log_date) INFO  $1" >&2
+		echo -e "INFO  $1" >&2
 	fi
 }
 
@@ -350,6 +345,10 @@ logout() {
 	fi
 }
 
+assert() {
+	"$NAME" -w || "$NAME" -i
+}
+
 whoami() {
 	local res=$(curl -s "$(auth_url user-info)")
 	local cnt=$(echo $res | tr ',' '\n' | wc -l)
@@ -363,7 +362,7 @@ whoami() {
 			local online=$(echo $res | cut -d ',' -f3)
 			local online=$((online - login))
 			local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
-			local login=$(date -d "@$login" "$date_format")
+			local login=$(date -d "@$login --iso-8601=seconds")
 			local in=$(echo $res | cut -d ',' -f4)
 			local out=$(echo $res | cut -d ',' -f5)
 			local tot=$(echo $res | cut -d ',' -f7)
@@ -426,7 +425,7 @@ whoami() {
 			fi
 			printf "%-${label_width}s %s\n" "System Version:" "$sysver"
 		else
-			log_info "$user"
+			echo "$user"
 		fi
 		exit 0
 	fi
@@ -525,9 +524,9 @@ while [[ $# -gt 0 ]]; do
 			ipv="$2"
 			shift 2
 			;;
-		--date-format)
-			date_format="$2"
-			shift 2
+		--assert)
+			op="assert"
+			shift
 			;;
 		--version)
 			echo "$NAME $VERSION"
@@ -576,6 +575,9 @@ case $op in
 		;;
 	login)
 		login
+		;;
+	assert)
+		assert
 		;;
 	logout)
 		logout

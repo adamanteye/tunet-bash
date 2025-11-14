@@ -1,0 +1,8 @@
+[Unit]
+Description=Tsinghua University Network Authentication Job
+After=network.target
+Wants=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tunet-bash --assert
