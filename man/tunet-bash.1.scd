@@ -6,10 +6,10 @@ tunet-bash - Tsinghua University network authentication utility
 
 # SYNOPSIS
 
-*tunet-bash* --config [--pass] [--date-format _ARG_] [-v]++
-*tunet-bash* --login [--auth auto|4|6|either] [--date-format _ARG_] [-v]++
-*tunet-bash* --logout [--auth auto|4|6|either] [--date-format _ARG_] [-v]++
-*tunet-bash* --whoami [--date-format _ARG_] [-v]++
+*tunet-bash* --config [--pass] [-v]++
+*tunet-bash* --login [--auth auto|4|6|either] [-v]++
+*tunet-bash* --logout [--auth auto|4|6|either] [-v]++
+*tunet-bash* --whoami [-v]++
 *tunet-bash* --version
 
 # DESCRIPTION
@@ -57,11 +57,6 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 	Use the pass password manager (_https://www.passwordstore.org/_) when configuring credentials with *-c*, *--config*.
 
 	The interactive prompt will request your _pass-name_ instead of the actual password.
-
-*--date-format* _DATE_FORMAT_
-	Specify the date format string passed to the *date* command for log timestamps.
-
-	Default value is _"--iso-8601=seconds"_.
 
 *--version*
 	Display version information and exit.
@@ -117,4 +112,4 @@ Source code and issue tracker: _https://github.com/adamanteye/tunet-bash_.
 
 # SEE ALSO
 
-*date*(1), *pass*(1)
+*pass*(1)

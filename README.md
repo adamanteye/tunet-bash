@@ -72,15 +72,15 @@ password:
 
 ```sh
 $ tunet-bash --login --auth 4
-[2025-10-18T14:14:14+08:00] INFO auth4 login
-[2025-10-18T14:14:14+08:00] INFO login_ok
+INFO auth4 login
+INFO login_ok
 ```
 
 查询当前登入用户:
 
 ```sh
 $ tunet-bash --whoami
-[2025-10-18T14:14:14+08:00] INFO qingxiaohua
+qingxiaohua
 ```
 
 ```sh
@@ -127,12 +127,12 @@ passname: tsinghua/qingxiaohua
 
 更多参数说明请查看手册页.
 
-### 守护登陆
+### systemd
 
-[crontab/autologin.sh](./crontab/autologin.sh) 提供了一个简单的断线后重新登陆脚本, 可以设置为以下的 crontab 任务:
+以 root 用户作为系统服务运行:
 
 ```
-0,20,40 * * * * /root/autologin.sh
+sudo systemd enable --now tunet-bash.timer
 ```
 
 ## 功能
@@ -183,6 +183,11 @@ passname: tsinghua/qingxiaohua
 但是建华楼有线网配置错误, 设备可能会错误拿到 SLAAC 地址.
 
 ## Change Log
+
+### 1.3.1
+
+- 移除日志中的时间戳
+- 增加 systemd timer
 
 ### 1.3.0
 
