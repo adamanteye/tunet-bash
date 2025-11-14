@@ -107,7 +107,7 @@ _$HOME/.cache/tunet-bash/passwd_
 
 # AUTHOR
 
-Maintained by adamanteye <ada@adamanteye.cc>.++
+Maintained by adamanteye <adamanteye@disroot.org>.++
 Source code and issue tracker: _https://github.com/adamanteye/tunet-bash_.
 
 # SEE ALSO
