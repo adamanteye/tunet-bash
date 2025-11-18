@@ -6,7 +6,7 @@ LC_ALL=C.UTF-8
 LANG=$LC_ALL
 
 NAME='tunet-bash'
-VERSION='1.3.1'
+VERSION='1.3.2'
 
 REDIRECT_URL='http://info.tsinghua.edu.cn/'
 TUNET_BASE_AUTH4='https://auth4.tsinghua.edu.cn'
@@ -369,7 +369,7 @@ whoami() {
 			local online=$(echo $res | cut -d ',' -f3)
 			local online=$((online - login))
 			local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
-			local login=$(date -d "@$login --iso-8601=seconds")
+			local login=$(date -d "@$login" "--iso-8601=seconds")
 			local in=$(echo $res | cut -d ',' -f4)
 			local out=$(echo $res | cut -d ',' -f5)
 			local tot=$(echo $res | cut -d ',' -f7)
