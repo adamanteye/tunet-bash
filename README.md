@@ -58,6 +58,11 @@ $ sudo make prefix=/usr/local install
 $ make uninstall
 ```
 
+注意: 从源码安装**默认不会**拷贝 `systemd` 定时任务, 如果有需求请修改 `systemd`
+下的文件, 将 `/usr/bin/tunet-bash` 改为实际的路径, 并将文件安装到
+`/etc/systemd/system/tunet-bash.service` 与
+`/etc/systemd/system/tunet-bash.timer`.
+
 ### 示例
 
 配置用户名和密码, 它们会被写入 `$HOME/.cache/tunet-bash/passwd`:
@@ -115,6 +120,18 @@ Device Details:
 System Version:    1.01.20250403
 ```
 
+启用定时任务:
+
+```sh
+$ sudo systemd enable --now tunet-bash.timer
+```
+
+查看日志:
+
+```sh
+$ sudo journalctl -u tunet-bash.service
+```
+
 ### 技巧
 
 使用 [pass](https://www.passwordstore.org/) 存储密码:
@@ -145,6 +162,11 @@ sudo systemd enable --now tunet-bash.timer
 - [x] 在线时间, 流量查询
 - [x] 余额查询
 - [x] 在线设备查询
+
+- [ ] 下线特定 IP
+- [ ] 准入代认证
+
+- [ ] 兼容 macOS
 
 ## 依赖
 
