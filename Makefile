@@ -1,8 +1,8 @@
 .DELETE_ON_ERROR:
 MAKEFLAGS += --no-builtin-rules
 
-.PHONY: install uninstall clean
-.DEFAULT_GOAL := install
+.PHONY: install uninstall man clean help
+.DEFAULT_GOAL := help
 
 prefix := $(HOME)/.local
 package := tunet-bash
@@ -63,6 +63,8 @@ ifeq ($(prefix),/usr)
 endif
 endif
 
+man: $(package).1
+
 $(package).1: man/$(package).1.scd
 	$(Q)scdoc < man/$(package).1.scd > $(package).1
 	$(call log,MAN,$@)
@@ -71,3 +73,19 @@ $(package).1: man/$(package).1.scd
 $(package).1.gz: $(package).1
 	$(Q)gzip -c $< > $@
 	$(call log,GZIP,$@)
+
+help:
+	@echo "Usage: make [TARGET]"
+	@echo
+	@echo "Targets:"
+	@printf "  install    Install $(package) under $(prefix)\n"
+	@printf "  uninstall  Remove installed files\n"
+	@printf "  man        Generate manpage\n"
+	@printf "  clean      Remove generated manpage files\n"
+	@printf "  help       Show this help message\n"
+	@echo
+	@echo "Variables:"
+	@printf "  prefix=<dir>     Installation prefix (default: $(prefix))\n"
+	@printf "  destdir=<dir>    Staging directory for packaging (default: none)\n"
+	@printf "  init=<system>    Init system (default: none, supported: systemd)\n"
+	@printf "  V=1              Verbose mode (show commands)\n"
