@@ -6,7 +6,7 @@ LC_ALL=C.UTF-8
 LANG=$LC_ALL
 
 NAME='tunet-bash'
-VERSION='1.3.2'
+VERSION='1.3.3'
 
 REDIRECT_URL='http://info.tsinghua.edu.cn/'
 TUNET_BASE_AUTH4='https://auth4.tsinghua.edu.cn'

@@ -10,7 +10,9 @@
 
 #### Arch
 
-- [AUR - tunet-bash](https://aur.archlinux.org/packages/tunet-bash)
+```
+$ paru -S tunet-bash
+```
 
 #### Debian
 
@@ -126,7 +128,9 @@ System Version:    1.01.20250403
 $ sudo systemd enable --now tunet-bash.timer
 ```
 
-查看日志:
+查看日志 (如果没有输出, 可尝试修改日志等级为
+`LogLevelMax=info`
+):
 
 ```sh
 $ sudo journalctl -u tunet-bash.service
