@@ -7,9 +7,9 @@ tunet-bash - Tsinghua University network authentication utility
 # SYNOPSIS
 
 *tunet-bash* --config [--pass] [-v]++
-*tunet-bash* --login [--auth auto|4|6|either] [-v]++
-*tunet-bash* --logout [--auth auto|4|6|either] [-v]++
-*tunet-bash* --whoami [-v]++
+*tunet-bash* --login [--auth auto|4|6|either] [-v] [--curl-extra-args ... ]++
+*tunet-bash* --logout [--auth auto|4|6|either] [-v] [--curl-extra-args ... ]++
+*tunet-bash* --whoami [-v] [--curl-extra-args ... ]++
 *tunet-bash* --version
 
 # DESCRIPTION
@@ -58,6 +58,11 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 
 	The interactive prompt will request your _pass-name_ instead of the actual password.
 
+*--curl-extra-args*
+	Pass extra arguments to *curl*.
+
+	Can be specified multiple times.
+
 *--version*
 	Display version information and exit.
 
@@ -74,9 +79,6 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 
 *tunet-bash* *-o* *-a* _6_
 	Log out using IPv6 authentication (auth6).
-
-*tunet-bash* *-w* *-v* *--date-format* _"+%c"_
-	Display detailed account status with custom date format for log timestamps.
 
 # ENVIRONMENT
 
@@ -112,4 +114,4 @@ Source code and issue tracker: _https://github.com/adamanteye/tunet-bash_.
 
 # SEE ALSO
 
-*pass*(1)
+*pass*(1) *curl*(1)

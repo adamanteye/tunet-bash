@@ -22,6 +22,7 @@ LOG_LEVEL=${LOG:-'info'}
 
 key_array=()
 data_array=()
+curl_extra_args=()
 
 verbose=0
 ipv=auto
@@ -209,8 +210,32 @@ check_pass() {
 	fi
 }
 
+run_curl() {
+	local _outvar="$1"
+	shift
+	local _res
+	local _err_file
+	_err_file=$(mktemp)
+
+	# -sS: Silent mode but show errors.
+	# Capture stderr to a temp file to report specific errors on failure.
+	_res=$(curl -sS "${curl_extra_args[@]}" "$@" 2>"$_err_file")
+	local _ret=$?
+
+	if [ $_ret -ne 0 ]; then
+		local _err_msg
+		_err_msg=$(cat "$_err_file")
+		rm -f "$_err_file"
+		log_error "curl connection failed: $_err_msg"
+		exit 1
+	fi
+	rm -f "$_err_file"
+	printf -v "$_outvar" '%s' "$_res"
+}
+
 fetch_ac_id() {
-	local res=$(curl -s $REDIRECT_URL)
+	local res
+	run_curl res $REDIRECT_URL
 	[[ $res =~ $REGEX_AC_ID ]]
 	local ac_id=${BASH_REMATCH[1]}
 	if [ -z $ac_id ]; then
@@ -224,7 +249,8 @@ fetch_ac_id() {
 
 fetch_challenge() {
 	local AUTH_CHALLENGE_URL=$(auth_url challenge)
-	local res=$(curl -s "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=$1" --data-urlencode "callback=callback")
+	local res
+	run_curl res "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=$1" --data-urlencode "callback=callback"
 	local REGEX_CHALLENGE='"challenge":"([^"]+)"'
 	[[ $res =~ $REGEX_CHALLENGE ]] && local challenge=${BASH_REMATCH[1]}
 	echo $challenge
@@ -264,9 +290,10 @@ login() {
 	local n="200"
 	local type="1"
 	local AUTH_WEB_URL=$(auth_url web)
-	local res=$(curl -s "$AUTH_WEB_URL" \
+	local res
+	run_curl res "$AUTH_WEB_URL" \
 		--data-urlencode "theme=pro" \
-		--data-urlencode "ac_id=$ac_id")
+		--data-urlencode "ac_id=$ac_id"
 	local REGEX_IP='ip[[:space:]]*\:[[:space:]]*"([a-f0-9\.\:]+)"'
 	[[ $res =~ $REGEX_IP ]] && local ip=${BASH_REMATCH[1]}
 	log_debug "ip: $ip"
@@ -280,7 +307,8 @@ login() {
 	local checksum="$token$USERNAME$token$password_md5$token$ac_id$token$ip$token$n$token$type$token$info"
 	checksum=$(echo -n $checksum | sha1sum -z | cut -d ' ' -f 1)
 	log_debug "checksum: $checksum"
-	local res=$(curl -s "$AUTH_LOGIN_URL" \
+	local res
+	run_curl res "$AUTH_LOGIN_URL" \
 		--data-urlencode "action=login" \
 		--data-urlencode "ac_id=$ac_id" \
 		--data-urlencode "double_stack=1" \
@@ -293,7 +321,7 @@ login() {
 		--data-urlencode "password={MD5}$password_md5" \
 		--data-urlencode "info=$info" \
 		--data-urlencode "chksum=$checksum" \
-		--data-urlencode "callback=callback")
+		--data-urlencode "callback=callback"
 
 	local REGEX_SUC_MSG='"suc_msg":"([^"]+)"'
 	[[ $res =~ $REGEX_SUC_MSG ]] && local suc_msg=${BASH_REMATCH[1]}
@@ -321,7 +349,8 @@ logout() {
 	log_debug "username: $USERNAME"
 	local AUTH_LOGOUT_URL=$(auth_url logout)
 	local time=$(date +%s)
-	local res=$(curl -s "$(auth_url user-info)")
+	local res
+	run_curl res "$(auth_url user-info)"
 	local ip=$(echo $res | cut -d ',' -f9)
 	local unbind="1"
 	log_debug "ip: $ip"
@@ -330,13 +359,14 @@ logout() {
 		log_error "not online"
 		exit 1
 	fi
-	local response=$(curl -s $AUTH_LOGOUT_URL \
+	local response
+	run_curl response $AUTH_LOGOUT_URL \
 		--data-urlencode "unbind=1" \
 		--data-urlencode "time=$time" \
 		--data-urlencode "ip=$ip" \
 		--data-urlencode "sign=$sign" \
 		--data-urlencode "username=$USERNAME" \
-		--data-urlencode "callback=callback")
+		--data-urlencode "callback=callback"
 
 	local REGEX_SUC_MSG='"error":"([^"]+)"'
 	[[ $response =~ $REGEX_SUC_MSG ]]
@@ -357,7 +387,8 @@ assert() {
 }
 
 whoami() {
-	local res=$(curl -s "$(auth_url user-info)")
+	local res
+	run_curl res "$(auth_url user-info)"
 	local cnt=$(echo $res | tr ',' '\n' | wc -l)
 	if [ $cnt != 22 ]; then
 		log_error "possibly not online"
@@ -379,7 +410,8 @@ whoami() {
 			local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
 			local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
 			local ip=$(echo $res | cut -d ',' -f9)
-			local res=$(curl -s "$(auth_url user-info)?callback=any")
+			local res
+			run_curl res "$(auth_url user-info)?callback=any"
 			[[ $res =~ $REGEX_USER_INFO_JSON ]]
 			local billing_name=${BASH_REMATCH[1]}
 			local device=${BASH_REMATCH[2]}
@@ -543,6 +575,10 @@ while [[ $# -gt 0 ]]; do
 			use_passname="yes"
 			shift
 			;;
+		--curl-extra-args)
+			curl_extra_args+=($2)
+			shift 2
+			;;
 		--)
 			shift
 			break
@@ -558,7 +594,7 @@ config_log
 
 if [ $ipv == "auto" ]; then
 	REGEX_IPV='//auth([46])\.tsinghua\.edu\.cn'
-	res=$(curl -s $REDIRECT_URL)
+	run_curl res $REDIRECT_URL
 	if [[ $res =~ $REGEX_IPV ]]; then
 		ipv="${BASH_REMATCH[1]}"
 	else
