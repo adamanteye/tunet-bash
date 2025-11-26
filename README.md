@@ -122,20 +122,6 @@ Device Details:
 System Version:    1.01.20250403
 ```
 
-启用定时任务:
-
-```sh
-$ sudo systemd enable --now tunet-bash.timer
-```
-
-查看日志 (如果没有输出, 可尝试修改日志等级为
-`LogLevelMax=info`
-):
-
-```sh
-$ sudo journalctl -u tunet-bash.service
-```
-
 ### 技巧
 
 使用 [pass](https://www.passwordstore.org/) 存储密码:
@@ -150,10 +136,20 @@ passname: tsinghua/qingxiaohua
 
 ### systemd
 
-以 root 用户作为系统服务运行:
+**此支持尚不完全, 可能存在未知的问题**
 
+启用定时任务:
+
+```sh
+$ sudo systemd enable --now tunet-bash.timer
 ```
-sudo systemd enable --now tunet-bash.timer
+
+查看日志 (如果没有输出, 可尝试修改日志等级为
+`LogLevelMax=info`
+):
+
+```sh
+$ sudo journalctl -u tunet-bash.service
 ```
 
 ## 功能
