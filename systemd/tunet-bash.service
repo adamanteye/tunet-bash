@@ -1,7 +1,9 @@
 [Unit]
-Description=Tsinghua University Network Authentication Job
+Description=Tsinghua University Network Authentication
+Documentation=man:tunet-bash(1)
 After=network.target
-Wants=network.target
+Before=nss-lookup.target
+Wants=nss-lookup.target
 
 [Service]
 Type=oneshot
