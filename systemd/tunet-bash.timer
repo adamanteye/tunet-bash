@@ -1,5 +1,5 @@
 [Unit]
-Description=Tsinghua University Network Authentication Timer
+Description=Tsinghua University network login deamon
 
 [Timer]
 OnStartupSec=1m

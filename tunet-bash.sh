@@ -163,12 +163,6 @@ tea() {
 	encode
 }
 
-config_log() {
-	if [ $verbose == 1 ]; then
-		LOG_LEVEL="debug"
-	fi
-}
-
 log_error() {
 	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ] ||
 		[ $LOG_LEVEL == "error" ]; then
@@ -389,6 +383,7 @@ assert() {
 whoami() {
 	local res
 	run_curl res "$(auth_url user-info)"
+	log_debug "$(auth_url user-info): $res"
 	local cnt=$(echo $res | tr ',' '\n' | wc -l)
 	if [ $cnt != 22 ]; then
 		log_error "possibly not online"
@@ -589,8 +584,6 @@ while [[ $# -gt 0 ]]; do
 			;;
 	esac
 done
-
-config_log
 
 if [ $ipv == "auto" ]; then
 	REGEX_IPV='//auth([46])\.tsinghua\.edu\.cn'

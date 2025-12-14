@@ -122,8 +122,6 @@ Device Details:
 System Version:    1.01.20250403
 ```
 
-### 技巧
-
 使用 [pass](https://www.passwordstore.org/) 存储密码:
 
 ```sh

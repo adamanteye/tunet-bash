@@ -6,3 +6,4 @@ complete -c tunet-bash -s v -l verbose -d 'When used with whoami query, provides
 complete -c tunet-bash -l pass -d 'When used with config, set pass-name instead of password' -r --no-files
 complete -c tunet-bash -s a -l auth -d 'Auth method' --no-files -ra '4 6 auto either'
 complete -c tunet-bash -l version -d 'Print version'
+complete -c tunet-bash -l curl-extra-args -d 'Pass extra arguments to curl'

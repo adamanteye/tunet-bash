@@ -1,5 +1,5 @@
 [Unit]
-Description=Tsinghua University Network Authentication
+Description=Tsinghua University network authentication
 Documentation=man:tunet-bash(1)
 After=network.target
 Before=nss-lookup.target
