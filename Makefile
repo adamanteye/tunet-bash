@@ -75,8 +75,6 @@ $(package).1.gz: $(package).1
 	$(call log,GZIP,$@)
 
 help:
-	@echo "Usage: make [TARGET]"
-	@echo
 	@echo "Targets:"
 	@printf "  install    Install $(package) under $(prefix)\n"
 	@printf "  uninstall  Remove installed files\n"
