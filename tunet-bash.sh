@@ -67,7 +67,7 @@ auth_url() {
 				echo "$TUNET_BASE_AUTH/cgi-bin/get_challenge"
 			fi
 			;;
-		user-info)
+		user_info)
 			if [[ "$ipv" == "6" ]]; then
 				echo "$TUNET_BASE_AUTH6/cgi-bin/rad_user_info"
 			elif [[ "$ipv" == "4" ]]; then
@@ -344,7 +344,7 @@ logout() {
 	local AUTH_LOGOUT_URL=$(auth_url logout)
 	local time=$(date +%s)
 	local res
-	run_curl res "$(auth_url user-info)"
+	run_curl res "$(auth_url user_info)"
 	local ip=$(echo $res | cut -d ',' -f9)
 	local unbind="1"
 	log_debug "ip: $ip"
@@ -382,8 +382,8 @@ assert() {
 
 whoami() {
 	local res
-	run_curl res "$(auth_url user-info)"
-	log_debug "$(auth_url user-info): $res"
+	run_curl res "$(auth_url user_info)"
+	log_debug "$(auth_url user_info): $res"
 	local cnt=$(echo $res | tr ',' '\n' | wc -l)
 	if [ $cnt != 22 ]; then
 		log_error "possibly not online"
