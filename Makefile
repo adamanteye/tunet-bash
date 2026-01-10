@@ -23,7 +23,7 @@ mandir := $(destdir)$(prefix)/share/man/man1
 fishcompdir := $(destdir)$(prefix)/share/fish/vendor_completions.d
 systemdir := $(destdir)$(prefix)/lib/systemd/system
 
-install: $(package).1.gz
+install: $(package).1.gz $(package).sh completions/$(package).fish
 	$(Q)mkdir -p "$(bindir)" "$(mandir)" "$(fishcompdir)"
 	$(Q)install -m 755 $(package).sh "$(bindir)/$(package)"
 	$(call log,INST,"$(bindir)/$(package)")

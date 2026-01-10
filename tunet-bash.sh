@@ -28,57 +28,24 @@ verbose=0
 ipv=auto
 op='whoami'
 
+auth_base() {
+	case "$ipv" in
+		6) echo "$TUNET_BASE_AUTH6" ;;
+		4) echo "$TUNET_BASE_AUTH4" ;;
+		*) echo "$TUNET_BASE_AUTH" ;;
+	esac
+}
+
 auth_url() {
-	local kind="$1"
+	local kind="$1" base
+	base="$(auth_base)"
 	case "$kind" in
-		login)
-			if [[ "$ipv" == "6" ]]; then
-				echo "$TUNET_BASE_AUTH6/cgi-bin/srun_portal"
-			elif [[ "$ipv" == "4" ]]; then
-				echo "$TUNET_BASE_AUTH4/cgi-bin/srun_portal"
-			else
-				echo "$TUNET_BASE_AUTH/cgi-bin/srun_portal"
-			fi
-			;;
-		logout)
-			if [[ "$ipv" == "6" ]]; then
-				echo "$TUNET_BASE_AUTH6/cgi-bin/rad_user_dm"
-			elif [[ "$ipv" == "4" ]]; then
-				echo "$TUNET_BASE_AUTH4/cgi-bin/rad_user_dm"
-			else
-				echo "$TUNET_BASE_AUTH/cgi-bin/rad_user_dm"
-			fi
-			;;
-		web)
-			if [[ "$ipv" == "6" ]]; then
-				echo "$TUNET_BASE_AUTH6/srun_portal_pc"
-			elif [[ "$ipv" == "4" ]]; then
-				echo "$TUNET_BASE_AUTH4/srun_portal_pc"
-			else
-				echo "$TUNET_BASE_AUTH/srun_portal_pc"
-			fi
-			;;
-		challenge)
-			if [[ "$ipv" == "6" ]]; then
-				echo "$TUNET_BASE_AUTH6/cgi-bin/get_challenge"
-			elif [[ "$ipv" == "4" ]]; then
-				echo "$TUNET_BASE_AUTH4/cgi-bin/get_challenge"
-			else
-				echo "$TUNET_BASE_AUTH/cgi-bin/get_challenge"
-			fi
-			;;
-		user_info)
-			if [[ "$ipv" == "6" ]]; then
-				echo "$TUNET_BASE_AUTH6/cgi-bin/rad_user_info"
-			elif [[ "$ipv" == "4" ]]; then
-				echo "$TUNET_BASE_AUTH4/cgi-bin/rad_user_info"
-			else
-				echo "$TUNET_BASE_AUTH/cgi-bin/rad_user_info"
-			fi
-			;;
-		*)
-			return 1
-			;;
+		login) echo "$base/cgi-bin/srun_portal" ;;
+		logout) echo "$base/cgi-bin/rad_user_dm" ;;
+		web) echo "$base/srun_portal_pc" ;;
+		challenge) echo "$base/cgi-bin/get_challenge" ;;
+		user_info) echo "$base/cgi-bin/rad_user_info" ;;
+		*) return 1 ;;
 	esac
 }
 
@@ -196,7 +163,7 @@ check_pass() {
 			log_error "please configure password"
 			exit 1
 		else
-			PASSWORD="$(echo -n $PASSWORD | base64 -d)"
+			PASSWORD="$(echo -n "$PASSWORD" | base64 -d)"
 		fi
 	else
 		log_debug "passname: $PASSNAME"
@@ -380,6 +347,77 @@ assert() {
 		"$NAME" -i -a "$ipv"
 }
 
+query_stats() {
+	local res="$1"
+	local login=$(echo $res | cut -d ',' -f2)
+	local online=$(echo $res | cut -d ',' -f3)
+	local online=$((online - login))
+	local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
+	local login=$(date -d "@$login" "-Iseconds")
+	local in=$(echo $res | cut -d ',' -f4)
+	local out=$(echo $res | cut -d ',' -f5)
+	local tot=$(echo $res | cut -d ',' -f7)
+	local sum=$((in + out))
+	local in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
+	local out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
+	local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
+	local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
+	local ip=$(echo $res | cut -d ',' -f9)
+	local res
+	run_curl res "$(auth_url user_info)?callback=any"
+	[[ $res =~ $REGEX_USER_INFO_JSON ]]
+	local billing_name=${BASH_REMATCH[1]}
+	local device=${BASH_REMATCH[2]}
+	local products_name=${BASH_REMATCH[3]}
+	local sysver=${BASH_REMATCH[4]}
+	local balance=${BASH_REMATCH[5]}
+	local mac=${BASH_REMATCH[6]}
+	local mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
+	local label_width=18
+	printf "%-${label_width}s %s\n" "Username:" "$user"
+	printf "%-${label_width}s %s\n" "Session Start:" "$login"
+	printf "%-${label_width}s %s h\n" "Session Age:" "$online"
+	printf "%-${label_width}s %s\n" "Billing Profile:" "$billing_name"
+	printf "%-${label_width}s %s\n" "Product Plan:" "$products_name"
+	printf "%-${label_width}s %s\n" "Online Devices:" "$device"
+	printf "%-${label_width}s %s CNY\n" "Balance:" "$balance"
+	printf "%-${label_width}s %s Mi\n" "Session Inbound:" "$in"
+	printf "%-${label_width}s %s Mi\n" "Session Outbound:" "$out"
+	printf "%-${label_width}s %s Mi\n" "Session Total:" "$sum"
+	printf "%-${label_width}s %s Gi\n" "Monthly Total:" "$tot"
+	printf "%-${label_width}s %s\n" "MAC Address:" "$mac"
+	printf "%-${label_width}s %s\n" "IP Address:" "$ip"
+	if command -v jq >/dev/null 2>&1; then
+		local res="${res:4:-1}"
+		local device_detail=$(echo "$res" | jq -r '.online_device_detail // empty' 2>/dev/null)
+		if [ -n "$device_detail" ] && [ "$device_detail" != "null" ]; then
+			echo
+			printf "%-${label_width}s\n" "Device Details:"
+			local device_num=1
+			echo "$device_detail" | jq -r 'to_entries[] | "\(.key)|\(.value.ip)|\(.value.ip6)|\(.value.class_name)|\(.value.os_name)"' 2>/dev/null | while IFS='|' read -r device_id device_ip device_ip6 device_class device_os; do
+				[ -z "$device_id" ] && continue
+				local device_indent=$(printf "%*s" 2 "")
+				local field_indent=$(printf "%*s" 4 "")
+				local field_width=$((label_width - 4))
+				printf "${device_indent}Device %d:\n" "$device_num"
+				printf "${field_indent}%-${field_width}s %s\n" "Rad Online ID:" "$device_id"
+				printf "${field_indent}%-${field_width}s %s\n" "IPv4 Address:" "${device_ip:-N/A}"
+				printf "${field_indent}%-${field_width}s %s\n" "IPv6 Address:" "${device_ip6:-N/A}"
+				[ -n "$device_class" ] && [ "$device_class" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "Class Name:" "$device_class"
+				[ -n "$device_os" ] && [ "$device_os" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "OS Name:" "$device_os"
+				echo
+				((device_num++))
+			done
+		else
+			echo
+			printf "%-${label_width}s %s\n" "Device Details:" "${dim}No details available${reset}"
+		fi
+	else
+		log_info "jq not found, skipping device details parsing"
+	fi
+	printf "%-${label_width}s %s\n" "System Version:" "$sysver"
+}
+
 whoami() {
 	local res
 	run_curl res "$(auth_url user_info)"
@@ -391,78 +429,12 @@ whoami() {
 	else
 		local user=$(echo $res | cut -d ',' -f1)
 		if [ $verbose -eq 1 ]; then
-			local login=$(echo $res | cut -d ',' -f2)
-			local online=$(echo $res | cut -d ',' -f3)
-			local online=$((online - login))
-			local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
-			local login=$(date -d "@$login" "-Iseconds")
-			local in=$(echo $res | cut -d ',' -f4)
-			local out=$(echo $res | cut -d ',' -f5)
-			local tot=$(echo $res | cut -d ',' -f7)
-			local sum=$((in + out))
-			local in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
-			local out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
-			local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
-			local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
-			local ip=$(echo $res | cut -d ',' -f9)
-			local res
-			run_curl res "$(auth_url user-info)?callback=any"
-			[[ $res =~ $REGEX_USER_INFO_JSON ]]
-			local billing_name=${BASH_REMATCH[1]}
-			local device=${BASH_REMATCH[2]}
-			local products_name=${BASH_REMATCH[3]}
-			local sysver=${BASH_REMATCH[4]}
-			local balance=${BASH_REMATCH[5]}
-			local mac=${BASH_REMATCH[6]}
-			local mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
-			local label_width=18
-			printf "%-${label_width}s %s\n" "Username:" "$user"
-			printf "%-${label_width}s %s\n" "Session Start:" "$login"
-			printf "%-${label_width}s %s h\n" "Session Age:" "$online"
-			printf "%-${label_width}s %s\n" "Billing Profile:" "$billing_name"
-			printf "%-${label_width}s %s\n" "Product Plan:" "$products_name"
-			printf "%-${label_width}s %s\n" "Online Devices:" "$device"
-			printf "%-${label_width}s %s CNY\n" "Balance:" "$balance"
-			printf "%-${label_width}s %s Mi\n" "Session Inbound:" "$in"
-			printf "%-${label_width}s %s Mi\n" "Session Outbound:" "$out"
-			printf "%-${label_width}s %s Mi\n" "Session Total:" "$sum"
-			printf "%-${label_width}s %s Gi\n" "Monthly Total:" "$tot"
-			printf "%-${label_width}s %s\n" "MAC Address:" "$mac"
-			printf "%-${label_width}s %s\n" "IP Address:" "$ip"
-			if command -v jq >/dev/null 2>&1; then
-				local res="${res:4:-1}"
-				local device_detail=$(echo "$res" | jq -r '.online_device_detail // empty' 2>/dev/null)
-				if [ -n "$device_detail" ] && [ "$device_detail" != "null" ]; then
-					echo
-					printf "%-${label_width}s\n" "Device Details:"
-					local device_num=1
-					echo "$device_detail" | jq -r 'to_entries[] | "\(.key)|\(.value.ip)|\(.value.ip6)|\(.value.class_name)|\(.value.os_name)"' 2>/dev/null | while IFS='|' read -r device_id device_ip device_ip6 device_class device_os; do
-						[ -z "$device_id" ] && continue
-						local device_indent=$(printf "%*s" 2 "")
-						local field_indent=$(printf "%*s" 4 "")
-						local field_width=$((label_width - 4))
-						printf "${device_indent}Device %d:\n" "$device_num"
-						printf "${field_indent}%-${field_width}s %s\n" "Rad Online ID:" "$device_id"
-						printf "${field_indent}%-${field_width}s %s\n" "IPv4 Address:" "${device_ip:-N/A}"
-						printf "${field_indent}%-${field_width}s %s\n" "IPv6 Address:" "${device_ip6:-N/A}"
-						[ -n "$device_class" ] && [ "$device_class" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "Class Name:" "$device_class"
-						[ -n "$device_os" ] && [ "$device_os" != "" ] && printf "${field_indent}%-${field_width}s %s\n" "OS Name:" "$device_os"
-						echo
-						((device_num++))
-					done
-				else
-					echo
-					printf "%-${label_width}s %s\n" "Device Details:" "${dim}No details available${reset}"
-				fi
-			else
-				log_info "jq not found, skipping device details parsing"
-			fi
-			printf "%-${label_width}s %s\n" "System Version:" "$sysver"
+			query_stats "$res"
 		else
 			echo "$user"
 		fi
-		exit 0
 	fi
+	exit 0
 }
 
 help() {
