@@ -59,8 +59,9 @@ fill_key() {
 	local array=()
 	for ((i = 0; i < ${#key}; i++)); do
 		local char=${key:$i:1}
-		local value=$(printf "%d" "'$char")
-		array+=($value)
+		local value
+		value=$(printf "%d" "'$char")
+		array+=("$value")
 	done
 	while [ ${#array[@]} -lt 16 ]; do
 		array+=(0)
@@ -79,17 +80,17 @@ fill_data() {
 	local data_len=${#data}
 	for ((i = 0; i < data_len; i++)); do
 		local char=${data:$i:1}
-		data_array+=($(printf "%d" "'$char"))
+		data_array+=("$(printf "%d" "'$char")")
 	done
 	local n=$(((data_len + 3) / 4))
 	local out_len=$(((n + 1) * 4))
 	while [ ${#data_array[@]} -lt $out_len ]; do
 		data_array+=(0)
 	done
-	data_array[$((out_len - 4))]=$(($data_len & 0xFF))
-	data_array[$((out_len - 3))]=$(($data_len >> 8 & 0xFF))
-	data_array[$((out_len - 2))]=$(($data_len >> 16 & 0xFF))
-	data_array[$((out_len - 1))]=$(($data_len >> 24 & 0xFF))
+	data_array[out_len - 4]=$((data_len & 0xFF))
+	data_array[out_len - 3]=$((data_len >> 8 & 0xFF))
+	data_array[out_len - 2]=$((data_len >> 16 & 0xFF))
+	data_array[out_len - 1]=$((data_len >> 24 & 0xFF))
 }
 
 encode() {
@@ -113,18 +114,19 @@ encode() {
 			m=$((m + ((y >> 3) ^ (z << 4) ^ (d ^ y))))
 			m=$((m + (key_array[$(((p & 3) ^ e))] ^ z)))
 			m_index=$((p * 4))
-			local temp_m=$((data_array[$m_index] | (data_array[$((m_index + 1))] << 8) | (data_array[$((m_index + 2))] << 16) | (data_array[$((m_index + 3))] << 24)))
+			local temp_m=$((data_array[m_index] | (data_array[m_index + 1] << 8) | (data_array[m_index + 2] << 16) | (data_array[m_index + 3] << 24)))
 			m=$((m + temp_m))
 			m=$((m & 0xFFFFFFFF))
-			data_array[$((m_index + 0))]=$((m & 0xFF))
-			data_array[$((m_index + 1))]=$(((m >> 8) & 0xFF))
-			data_array[$((m_index + 2))]=$(((m >> 16) & 0xFF))
-			data_array[$((m_index + 3))]=$(((m >> 24) & 0xFF))
+			data_array[m_index + 0]=$((m & 0xFF))
+			data_array[m_index + 1]=$(((m >> 8) & 0xFF))
+			data_array[m_index + 2]=$(((m >> 16) & 0xFF))
+			data_array[m_index + 3]=$(((m >> 24) & 0xFF))
 			z=$m
 		done
 	done
 	for ((i = 0; i < ${#data_array[@]}; i++)); do
-		local hex=$(printf "%x" ${data_array[$i]})
+		local hex
+		hex="$(printf "%x" "${data_array[$i]}")"
 		echo -e -n "\x$hex"
 	done
 }
@@ -137,27 +139,27 @@ tea() {
 
 log_error() {
 	[ "$quiet" -eq 1 ] && return 0
-	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ] ||
-		[ $LOG_LEVEL == "error" ]; then
+	if [ "$LOG_LEVEL" == "info" ] || [ "$LOG_LEVEL" == "debug" ] ||
+		[ "$LOG_LEVEL" == "error" ]; then
 		echo "ERROR $1" >&2
 	fi
 }
 
 log_debug() {
 	[ "$quiet" -eq 1 ] && return 0
-	[ $LOG_LEVEL == "debug" ] && echo -e "DEBUG $1" >&2
+	[ "$LOG_LEVEL" == "debug" ] && echo -e "DEBUG $1" >&2
 }
 
 log_info() {
 	[ "$quiet" -eq 1 ] && return 0
-	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ]; then
+	if [ "$LOG_LEVEL" == "info" ] || [ "$LOG_LEVEL" == "debug" ]; then
 		echo -e "INFO  $1" >&2
 	fi
 }
 
 check_user() {
 	USERNAME=${USERNAME:-"$TUNET_USERNAME"}
-	if [ -z $USERNAME ]; then
+	if [ -z "$USERNAME" ]; then
 		log_error "please configure username"
 		exit 1
 	fi
@@ -166,8 +168,8 @@ check_user() {
 check_pass() {
 	PASSNAME=${PASSNAME:-"$TUNET_PASSNAME"}
 	PASSWORD=${PASSWORD:-"$TUNET_PASSWORD"}
-	if [ -z $PASSNAME ]; then
-		if [ -z $PASSWORD ]; then
+	if [ -z "$PASSNAME" ]; then
+		if [ -z "$PASSWORD" ]; then
 			log_error "please configure password"
 			exit 1
 		else
@@ -199,7 +201,7 @@ run_curl() {
 		exit 1
 	fi
 	rm -f "$_err_file"
-	log_debug "curl $@: $_res"
+	log_debug "curl $*: $_res"
 	printf -v "$_outvar" '%s' "$_res"
 }
 
@@ -207,44 +209,47 @@ fetch_ac_id() {
 	local res
 	run_curl res $REDIRECT_URL
 	[[ $res =~ $REGEX_AC_ID ]]
-	local ac_id=${BASH_REMATCH[1]}
-	if [ -z $ac_id ]; then
+	local ac_id="${BASH_REMATCH[1]}"
+	if [ -z "$ac_id" ]; then
 		log_debug "ac_id not found, using 1 as default"
 		echo "1"
 	else
 		log_debug "ac_id: $ac_id"
-		echo $ac_id
+		echo "$ac_id"
 	fi
 }
 
 fetch_challenge() {
-	local AUTH_CHALLENGE_URL=$(auth_url challenge)
+	local AUTH_CHALLENGE_URL
+	AUTH_CHALLENGE_URL=$(auth_url challenge)
 	local res
 	run_curl res "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=$1" --data-urlencode "callback=callback"
 	local REGEX_CHALLENGE='"challenge":"([^"]+)"'
 	[[ $res =~ $REGEX_CHALLENGE ]] && local challenge=${BASH_REMATCH[1]}
-	echo $challenge
+	echo "$challenge"
 }
 
 gen_hmacmd5() {
-	echo -n $1 | openssl dgst -md5 -hmac "" -r | cut -d ' ' -f 1
+	echo -n "$1" | openssl dgst -md5 -hmac "" -r | cut -d ' ' -f 1
 }
 
 post_info() {
 	local challenge=$1
 	local json="{\"acid\":\"$2\",\"enc_ver\":\"srun_bx1\",\"ip\":\"\",\"password\":\"$PASSWORD\",\"username\":\"$USERNAME\"}"
-	local data=$(echo -n $json | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g')
-	echo $(tea $challenge $data | base64 | tr -d '\n' | tr \
+	local data
+	data=$(echo -n "$json" | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g')
+	tea "$challenge" "$data" | base64 | tr -d '\n' | tr \
 		'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
-		'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA')
+		'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA'
 }
 
 check_perm() {
 	if [ -f "$CACHE_DIR/passwd" ]; then
-		if [ $(stat -c "%a" "$CACHE_DIR/passwd") != "600" ]; then
+		if [ "$(stat -c "%a" "$CACHE_DIR/passwd")" != 600 ]; then
 			log_error "permission is too open: $CACHE_DIR/passwd"
 			exit 1
 		else
+			# shellcheck disable=SC1091
 			source "$CACHE_DIR/passwd"
 		fi
 	fi
@@ -256,10 +261,12 @@ login() {
 	check_pass
 	log_info "login"
 	log_debug "username: $USERNAME"
-	local ac_id=$(fetch_ac_id)
+	local ac_id
+	ac_id=$(fetch_ac_id)
 	local n="200"
 	local type="1"
-	local AUTH_WEB_URL=$(auth_url web)
+	local AUTH_WEB_URL
+	AUTH_WEB_URL=$(auth_url web)
 	local res
 	run_curl res "$AUTH_WEB_URL" \
 		--data-urlencode "theme=pro" \
@@ -267,15 +274,19 @@ login() {
 	local REGEX_IP='ip[[:space:]]*\:[[:space:]]*"([a-f0-9\.\:]+)"'
 	[[ $res =~ $REGEX_IP ]] && local ip=${BASH_REMATCH[1]}
 	log_debug "ip: $ip"
-	local token=$(fetch_challenge "$ip")
+	local token
+	token=$(fetch_challenge "$ip")
 	log_debug "token: $token"
-	local info="{SRBX1}$(post_info $token $ac_id)"
+	local info
+	info="{SRBX1}$(post_info "$token" "$ac_id")"
 	log_debug "info: <redacted>"
-	local password_md5=$(gen_hmacmd5 $token)
+	local password_md5
+	password_md5=$(gen_hmacmd5 "$token")
 	log_debug "password_md5: {MD5}<redacted>"
-	local AUTH_LOGIN_URL=$(auth_url login)
+	local AUTH_LOGIN_URL
+	AUTH_LOGIN_URL=$(auth_url login)
 	local checksum="$token$USERNAME$token$password_md5$token$ac_id$token$ip$token$n$token$type$token$info"
-	checksum=$(echo -n $checksum | sha1sum -z | cut -d ' ' -f 1)
+	checksum=$(echo -n "$checksum" | sha1sum -z | cut -d ' ' -f 1)
 	log_debug "checksum: $checksum"
 	local res
 	run_curl res "$AUTH_LOGIN_URL" \
@@ -296,7 +307,7 @@ login() {
 	local REGEX_SUC_MSG='"suc_msg":"([^"]+)"'
 	[[ $res =~ $REGEX_SUC_MSG ]] && local suc_msg=${BASH_REMATCH[1]}
 	if [ "$suc_msg" != "login_ok" ]; then
-		if [ -z $suc_msg ]; then
+		if [ -z "$suc_msg" ]; then
 			local REGEX_ERR_MSG='"error":"([^"]+)"'
 			[[ $res =~ $REGEX_ERR_MSG ]]
 			local err_msg=${BASH_REMATCH[1]}
@@ -316,20 +327,25 @@ logout() {
 	check_user
 	log_info "logout"
 	log_debug "username: $USERNAME"
-	local AUTH_LOGOUT_URL=$(auth_url logout)
-	local time=$(date +%s)
+	local AUTH_LOGOUT_URL
+	AUTH_LOGOUT_URL=$(auth_url logout)
+	local time
+	time=$(date +%s)
 	local res
 	run_curl res "$(auth_url user_info)"
-	local ip=$(echo $res | cut -d ',' -f9)
+	local ip
+	ip=$(echo "$res" | cut -d ',' -f9)
 	local unbind="1"
 	log_debug "ip: $ip"
-	local sign=$(echo -n "$time$USERNAME$ip$unbind$time" | sha1sum -z | cut -d ' ' -f 1)
+	local sign
+	sign=$(echo -n "$time$USERNAME$ip$unbind$time" | sha1sum -z |
+		cut -d ' ' -f 1)
 	if [ -z "$ip" ]; then
 		log_error "not online"
 		exit 1
 	fi
 	local response
-	run_curl response $AUTH_LOGOUT_URL \
+	run_curl response "$AUTH_LOGOUT_URL" \
 		--data-urlencode "unbind=1" \
 		--data-urlencode "time=$time" \
 		--data-urlencode "ip=$ip" \
@@ -355,16 +371,18 @@ assert() {
 
 query_stats() {
 	local res="$1"
-	local login=$(echo $res | cut -d ',' -f2)
-	local online=$(echo $res | cut -d ',' -f3)
-	local online=$((online - login))
-	local online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
-	local login=$(date -d "@$login" "-Iseconds")
-	local in=$(echo $res | cut -d ',' -f4)
-	local out=$(echo $res | cut -d ',' -f5)
-	local tot=$(echo $res | cut -d ',' -f7)
+	local user f2_login f3_online f4_in f5_out f7_tot f9_ip rest
+	IFS=, read -r user f2_login f3_online f4_in f5_out _ f7_tot _ f9_ip rest <<<"$res"
+	local login="$f2_login"
+	local online="$f3_online"
+	local in="$f4_in"
+	local out="$f5_out"
+	local tot="$f7_tot"
+	local ip="$f9_ip"
+	online=$((online - login))
 	local sum=$((in + out))
-	local ip=$(echo $res | cut -d ',' -f9)
+	online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
+	login="$(date -d "@$login" "-Iseconds")"
 	local res
 	run_curl res "$(auth_url user_info)?callback=any"
 	[[ $res =~ $REGEX_USER_INFO_JSON ]]
@@ -374,9 +392,9 @@ query_stats() {
 	local sysver=${BASH_REMATCH[4]}
 	local balance=${BASH_REMATCH[5]}
 	local mac=${BASH_REMATCH[6]}
-	local mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
+	mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
 	local label_width=18
-	if [ $format == json ]; then
+	if [ "$format" == json ]; then
 		local devices_json='[]'
 		local raw_json="${res:4:-1}"
 		devices_json="$(echo "$raw_json" | jq '
@@ -391,7 +409,7 @@ query_stats() {
 				class: (.value.class_name // null),
 				os: (.value.os_name // null)
 			})')"
-
+		# shellcheck disable=SC2016
 		json_out \
 			--arg user "$user" \
 			--arg login "$login" \
@@ -435,10 +453,10 @@ query_stats() {
 				}
 			}'
 	else
-		local in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
-		local out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
-		local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
-		local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
+		in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
+		out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
+		sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
+		tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
 		printf "%-${label_width}s %s\n" "Username:" "$user"
 		printf "%-${label_width}s %s\n" "Session Start:" "$login"
 		printf "%-${label_width}s %s h\n" "Session Age:" "$online"
@@ -453,16 +471,20 @@ query_stats() {
 		printf "%-${label_width}s %s\n" "MAC Address:" "$mac"
 		printf "%-${label_width}s %s\n" "IP Address:" "$ip"
 		local res="${res:4:-1}"
-		local device_detail=$(echo "$res" | jq -r '.online_device_detail // empty' 2>/dev/null)
+		local device_detail
+		device_detail=$(echo "$res" | jq -r '.online_device_detail // empty' 2>/dev/null)
 		if [ -n "$device_detail" ] && [ "$device_detail" != "null" ]; then
 			echo
 			printf "%-${label_width}s\n" "Device Details:"
 			local device_num=1
 			echo "$device_detail" | jq -r 'to_entries[] | "\(.key)|\(.value.ip)|\(.value.ip6)|\(.value.class_name)|\(.value.os_name)"' 2>/dev/null | while IFS='|' read -r device_id device_ip device_ip6 device_class device_os; do
 				[ -z "$device_id" ] && continue
-				local device_indent=$(printf "%*s" 2 "")
-				local field_indent=$(printf "%*s" 4 "")
-				local field_width=$((label_width - 4))
+				local device_indent
+				device_indent=$(printf "%*s" 2 "")
+				local field_indent
+				field_indent=$(printf "%*s" 4 "")
+				local field_width
+				field_width=$((label_width - 4))
 				printf "${device_indent}Device %d:\n" "$device_num"
 				printf "${field_indent}%-${field_width}s %s\n" "Rad Online ID:" "$device_id"
 				printf "${field_indent}%-${field_width}s %s\n" "IPv4 Address:" "${device_ip:-N/A}"
@@ -474,7 +496,7 @@ query_stats() {
 			done
 		else
 			echo
-			printf "%-${label_width}s %s\n" "Device Details:" "${dim}No details available${reset}"
+			printf "%-${label_width}s %s\n" "Device Details:" "No details available"
 		fi
 		printf "%-${label_width}s %s\n" "System Version:" "$sysver"
 	fi
@@ -486,20 +508,23 @@ json_out() {
 
 whoami() {
 	local res
-	local url="$(auth_url user_info)"
+	local url
+	url="$(auth_url user_info)"
 	run_curl res "$url"
-	local cnt=$(echo $res | tr ',' '\n' | wc -l)
-	if [ $cnt != $RAD_USER_KEY_LENGHT ]; then
+	local cnt
+	cnt=$(echo "$res" | tr ',' '\n' | wc -l)
+	if [ "$cnt" != $RAD_USER_KEY_LENGHT ]; then
 		log_error "possibly not online"
 		exit 1
 	else
-		local user=$(echo $res | cut -d ',' -f1)
+		local user
+		user=$(echo "$res" | cut -d ',' -f1)
 		if [ $verbose -eq 1 ]; then
 			query_stats "$res"
 		else
 			if [ "$format" = "json" ]; then
-				json_out --arg user "$user" \
-					'{user: $user}'
+				# shellcheck disable=SC2016
+				json_out --arg user "$user" '{user:$user}'
 			else
 				echo "$user"
 			fi
@@ -515,21 +540,21 @@ help() {
 
 config() {
 	while [[ -z $USERNAME ]]; do
-		read -p "username: " USERNAME
+		read -p -r "username: " USERNAME
 	done
 	echo "export TUNET_USERNAME=$USERNAME" >"$CACHE_DIR/passwd"
 	if [[ "$use_passname" == "yes" ]]; then
 		while [[ -z $PASSNAME ]]; do
-			read -p "passname: " PASSNAME
+			read -p -r "passname: " PASSNAME
 		done
 		echo "export TUNET_PASSNAME=$PASSNAME" >>"$CACHE_DIR/passwd"
 	else
 
 		while [[ -z $PASSWORD ]]; do
-			read -s -p "password: " PASSWORD
+			read -s -p -r "password: " PASSWORD
 			echo
 		done
-		echo "export TUNET_PASSWORD=$(echo -n $PASSWORD | base64)" >>"$CACHE_DIR/passwd"
+		echo "export TUNET_PASSWORD=$(echo -n "$PASSWORD" | base64)" >>"$CACHE_DIR/passwd"
 	fi
 	chmod 600 "$CACHE_DIR/passwd"
 }
@@ -614,7 +639,7 @@ while [ $# -gt 0 ]; do
 			shift
 			;;
 		--curl-extra-args)
-			curl_extra_args+=($2)
+			curl_extra_args+=("$2")
 			shift 2
 			;;
 		--output)
@@ -639,11 +664,13 @@ done
 info_probe() {
 	log_debug "probe via rad_user_info"
 	run_curl res "$TUNET_BASE_AUTH4/cgi-bin/rad_user_info"
-	local cnt=$(echo $res | tr ',' '\n' | wc -l)
-	if [ $cnt != $RAD_USER_KEY_LENGHT ]; then
+	local cnt
+	cnt=$(echo "$res" | tr ',' '\n' | wc -l)
+	if [ "$cnt" != $RAD_USER_KEY_LENGHT ]; then
 		run_curl res "$TUNET_BASE_AUTH6/cgi-bin/rad_user_info"
-		local cnt=$(echo $res | tr ',' '\n' | wc -l)
-		if [ $cnt != $RAD_USER_KEY_LENGHT ]; then
+		local cnt
+		cnt=$(echo "$res" | tr ',' '\n' | wc -l)
+		if [ "$cnt" != $RAD_USER_KEY_LENGHT ]; then
 			ipv="generic"
 		else
 			ipv=6
