@@ -364,10 +364,6 @@ query_stats() {
 	local out=$(echo $res | cut -d ',' -f5)
 	local tot=$(echo $res | cut -d ',' -f7)
 	local sum=$((in + out))
-	local in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
-	local out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
-	local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
-	local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
 	local ip=$(echo $res | cut -d ',' -f9)
 	local res
 	run_curl res "$(auth_url user_info)?callback=any"
@@ -404,10 +400,10 @@ query_stats() {
 			--arg product "$products_name" \
 			--arg device_count "$device" \
 			--arg balance "$balance" \
-			--arg inbound_mib "$in" \
-			--arg outbound_mib "$out" \
-			--arg total_mib "$sum" \
-			--arg monthly_gib "$tot" \
+			--arg inbound "$in" \
+			--arg outbound "$out" \
+			--arg total "$sum" \
+			--arg monthly "$tot" \
 			--arg mac "$mac" \
 			--arg ip "$ip" \
 			--arg sysver "$sysver" \
@@ -421,7 +417,7 @@ query_stats() {
 				billing: {
 					name: $billing_name,
 					product: $product,
-					balance_cny: ($balance | tonumber)
+					balance: ($balance | tonumber)
 				},
 				network: {
 					ip: $ip,
@@ -429,16 +425,20 @@ query_stats() {
 					devices: $devices
 				},
 				traffic: {
-					in_mib: ($inbound_mib | tonumber),
-					out_mib: ($outbound_mib | tonumber),
-					total_mib: ($total_mib | tonumber),
-					monthly_gib: ($monthly_gib | tonumber)
+					inbound: ($inbound | tonumber),
+					outbound: ($outbound | tonumber),
+					total: ($total | tonumber),
+					monthly: ($monthly | tonumber)
 				},
 				system: {
 					version: $sysver
 				}
 			}'
 	else
+		local in=$(awk "BEGIN {printf \"%.2f\n\", $in / 1048576}")
+		local out=$(awk "BEGIN {printf \"%.2f\n\", $out / 1048576}")
+		local sum=$(awk "BEGIN {printf \"%.2f\n\", $sum / 1048576}")
+		local tot=$(awk "BEGIN {printf \"%.2f\n\", $tot / 1073741824}")
 		printf "%-${label_width}s %s\n" "Username:" "$user"
 		printf "%-${label_width}s %s\n" "Session Start:" "$login"
 		printf "%-${label_width}s %s h\n" "Session Age:" "$online"
