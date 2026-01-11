@@ -223,7 +223,11 @@ fetch_challenge() {
 	local AUTH_CHALLENGE_URL
 	AUTH_CHALLENGE_URL=$(auth_url challenge)
 	local res
-	run_curl res "$AUTH_CHALLENGE_URL" --data-urlencode "username=$USERNAME" --data-urlencode "double_stack=1" --data-urlencode "ip=$1" --data-urlencode "callback=callback"
+	run_curl res "$AUTH_CHALLENGE_URL" \
+		--data-urlencode "username=$USERNAME" \
+		--data-urlencode "double_stack=1" \
+		--data-urlencode "ip=$1" \
+		--data-urlencode "callback=callback"
 	local REGEX_CHALLENGE='"challenge":"([^"]+)"'
 	[[ $res =~ $REGEX_CHALLENGE ]] && local challenge=${BASH_REMATCH[1]}
 	echo "$challenge"
@@ -540,18 +544,21 @@ help() {
 
 config() {
 	while [[ -z $USERNAME ]]; do
-		read -p -r "username: " USERNAME
+		# shellcheck disable=SC2162
+		read -p "username: " USERNAME
 	done
 	echo "export TUNET_USERNAME=$USERNAME" >"$CACHE_DIR/passwd"
 	if [[ "$use_passname" == "yes" ]]; then
 		while [[ -z $PASSNAME ]]; do
-			read -p -r "passname: " PASSNAME
+			# shellcheck disable=SC2162
+			read -p "passname: " PASSNAME
 		done
 		echo "export TUNET_PASSNAME=$PASSNAME" >>"$CACHE_DIR/passwd"
 	else
 
 		while [[ -z $PASSWORD ]]; do
-			read -s -p -r "password: " PASSWORD
+			# shellcheck disable=SC2162
+			read -s -p "password: " PASSWORD
 			echo
 		done
 		echo "export TUNET_PASSWORD=$(echo -n "$PASSWORD" | base64)" >>"$CACHE_DIR/passwd"
@@ -680,16 +687,18 @@ info_probe() {
 	fi
 }
 
-if [[ $ipv == "auto" && $op != help ]]; then
-	REGEX_IPV='//auth([46])\.tsinghua\.edu\.cn'
-	run_curl res $REDIRECT_URL
-	if [[ $res =~ $REGEX_IPV ]]; then
-		ipv="${BASH_REMATCH[1]}"
-	else
-		info_probe
+configure_ipv() {
+	if [[ "$ipv" == "auto" ]]; then
+		REGEX_IPV='//auth([46])\.tsinghua\.edu\.cn'
+		run_curl res $REDIRECT_URL
+		if [[ "$res" =~ $REGEX_IPV ]]; then
+			ipv="${BASH_REMATCH[1]}"
+		else
+			info_probe
+		fi
+		log_debug "set endpoint: $ipv"
 	fi
-	log_debug "set endpoint: $ipv"
-fi
+}
 
 case "$format" in
 	text) ;;
@@ -713,15 +722,19 @@ case $op in
 		config
 		;;
 	whoami)
+		configure_ipv
 		whoami
 		;;
 	login)
+		configure_ipv
 		login
 		;;
 	assert)
+		configure_ipv
 		assert
 		;;
 	logout)
+		configure_ipv
 		logout
 		;;
 esac
