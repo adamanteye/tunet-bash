@@ -1,0 +1,22 @@
+name: Lint
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+jobs:
+  build:
+    name: Lint
+    runs-on: ubuntu-latest
+    container: koalaman/shellcheck-alpine
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Shell Check
+        run: |
+          shellcheck tunet-bash.sh
