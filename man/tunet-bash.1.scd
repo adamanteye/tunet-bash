@@ -6,18 +6,26 @@ tunet-bash - Tsinghua University network authentication utility
 
 # SYNOPSIS
 
+*tunet-bash* _[OPTIONS]_
+
+Common usage patterns:
+
 *tunet-bash* --config [--pass] [-v]++
 *tunet-bash* --login [--auth auto|4|6|generic] [-v] [--curl-extra-args ... ]++
 *tunet-bash* --logout [--auth auto|4|6|generic] [-v] [--curl-extra-args ... ]++
 *tunet-bash* --whoami [-v] [--curl-extra-args ... ]++
 *tunet-bash* --version
 
+When invoked without arguments, *tunet-bash* defaults to *--whoami*.
+
 # DESCRIPTION
 
 *tunet-bash* is a network authentication utility for Tsinghua University.++
-It is written in bash with minimal dependencies and makes no assumptions about the user environment.
+It is implemented in POSIX-compatible bash with minimal external dependencies.
 
 # OPTIONS
+
+## Authentication and Account Management
 
 *-c*, *--config*
 	Launch an interactive prompt to configure
@@ -25,7 +33,8 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 
 	Credentials are saved to _$HOME/.cache/tunet-bash/passwd_.
 
-	Once configured, these credentials will be automatically used for login and logout operations.
+	Once configured, the saved credentials are automatically used for subsequent
+	login and logout.
 
 *-i*, *--login*
 	Authenticate and log in to the university network.
@@ -36,13 +45,19 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 *-w*, *--whoami*
 	Query the current account status and connection information.
 
-	This command also works with Tsinghua-Secure connections.
+	This command also works when connected via Tsinghua-Secure.
+
+## Output Control
 
 *-v*, *--verbose*
 	Display detailed statistics when used with *-w*, *--whoami*.
 
 *-q*, *--quiet*
-	Display no log.
+	Suppress all log output.
+
+	Only command results are written to standard output.
+
+## Endpoint Configuration
 
 *-a*, *--auth* _IP_VERSION_
 	Specify the authentication endpoint.
@@ -54,15 +69,23 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 	- _6_: Enforce IPv6 (auth6.tsinghua.edu.cn)
 	- _generic_: Use the generic authentication endpoint (auth.tsinghua.edu.cn)
 
+## Credential Management
+
 *--pass*
-	Use the pass password manager (_https://www.passwordstore.org/_) when configuring credentials with *-c*, *--config*.
+	Use the pass password manager (_https://www.passwordstore.org/_) when
+	configuring credentials with *-c*, *--config*.
 
-	The interactive prompt will request your _pass-name_ instead of the actual password.
+	The interactive prompt will request your _pass-name_ instead of the
+	actual password.
 
-*--curl-extra-args*
-	Pass extra arguments to *curl*.
+## Networking and Debugging
 
-	Can be specified multiple times.
+*--curl-extra-args* _ARG_
+	Pass extra arguments to *curl*(1).
+
+	This option may be specified multiple times.
+
+## Informational Options
 
 *--version*
 	Display version information and exit.
@@ -91,25 +114,25 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 
 	Valid values: _debug_, _info_, _error_.
 
-	If set to any other value, no log messages will be displayed.
+	If set to any other value, logging is disabled.
 
 *USERNAME*
-	Override the username stored in _$HOME/.cache/tunet-bash/passwd_.
+	Override the username stored in the credential file.
 
 *PASSWORD*
-	Override the password stored in _$HOME/.cache/tunet-bash/passwd_.
+	Override the stored password.
+
+	Ignored if *PASSNAME* is set.
 
 *PASSNAME*
-	Override the pass-name stored in _$HOME/.cache/tunet-bash/passwd_.
-
-	When this is set, *PASSWORD* is ignored in favor of retrieving the password from the pass store.
+	Override the passname stored in _$HOME/.cache/tunet-bash/passwd_.
 
 # FILES
 
 _$HOME/.cache/tunet-bash/passwd_
 	Stores user credentials including username, password, or passname.
 
-	This file is created with restricted permissions (600) for security.
+	This file is created with permissions 0600 to restrict access.
 
 # AUTHOR
 
