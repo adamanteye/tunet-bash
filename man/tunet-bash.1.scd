@@ -7,8 +7,8 @@ tunet-bash - Tsinghua University network authentication utility
 # SYNOPSIS
 
 *tunet-bash* --config [--pass] [-v]++
-*tunet-bash* --login [--auth auto|4|6|either] [-v] [--curl-extra-args ... ]++
-*tunet-bash* --logout [--auth auto|4|6|either] [-v] [--curl-extra-args ... ]++
+*tunet-bash* --login [--auth auto|4|6|generic] [-v] [--curl-extra-args ... ]++
+*tunet-bash* --logout [--auth auto|4|6|generic] [-v] [--curl-extra-args ... ]++
 *tunet-bash* --whoami [-v] [--curl-extra-args ... ]++
 *tunet-bash* --version
 
@@ -41,17 +41,18 @@ It is written in bash with minimal dependencies and makes no assumptions about t
 *-v*, *--verbose*
 	Display detailed statistics when used with *-w*, *--whoami*.
 
-	Set log level to _debug_.
+*-q*, *--quiet*
+	Display no log.
 
 *-a*, *--auth* _IP_VERSION_
-	Specify the authentication protocol version.
+	Specify the authentication endpoint.
 
 	Valid values for _IP_VERSION_ are as follows:
 
-	- _auto_: Automatically detect the appropriate version (default)
-	- _4_: Enforce IPv4 authentication (auth4.tsinghua.edu.cn)
-	- _6_: Enforce IPv6 authentication (auth6.tsinghua.edu.cn)
-	- _either_: Use the default authentication server (auth.tsinghua.edu.cn)
+	- _auto_: Automatically detect the appropriate endpoint (default)
+	- _4_: Enforce IPv4 (auth4.tsinghua.edu.cn)
+	- _6_: Enforce IPv6 (auth6.tsinghua.edu.cn)
+	- _generic_: Use the generic authentication endpoint (auth.tsinghua.edu.cn)
 
 *--pass*
 	Use the pass password manager (_https://www.passwordstore.org/_) when configuring credentials with *-c*, *--config*.

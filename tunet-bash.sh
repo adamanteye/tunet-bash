@@ -6,7 +6,7 @@ LC_ALL=C.UTF-8
 LANG=$LC_ALL
 
 NAME='tunet-bash'
-VERSION='1.3.3'
+VERSION='1.4.0'
 
 REDIRECT_URL='http://info.tsinghua.edu.cn/'
 TUNET_BASE_AUTH4='https://auth4.tsinghua.edu.cn'
@@ -14,6 +14,7 @@ TUNET_BASE_AUTH6='https://auth6.tsinghua.edu.cn'
 TUNET_BASE_AUTH='https://auth.tsinghua.edu.cn'
 REGEX_USER_INFO_JSON='"billing_name":"([^"]+)".*"online_device_total":"([^"]+)"[^}]*"products_name":"([^"]+)"[^}]*"sysver":"([^"]+)"[^}]*"user_balance":([^,]+)[^}]*"user_mac":"([^"]+)"'
 REGEX_AC_ID='//auth[46]\.tsinghua\.edu\.cn/index_([0-9]+)\.html'
+RAD_USER_KEY_LENGHT=22
 
 KEY_ARRAY_LENGTH=4
 
@@ -27,17 +28,21 @@ curl_extra_args=()
 verbose=0
 ipv=auto
 op='whoami'
+format="text"
+quiet=0
 
 auth_base() {
+	log_debug "endpoint: $ipv"
 	case "$ipv" in
 		6) echo "$TUNET_BASE_AUTH6" ;;
 		4) echo "$TUNET_BASE_AUTH4" ;;
-		*) echo "$TUNET_BASE_AUTH" ;;
+		generic) echo "$TUNET_BASE_AUTH" ;;
+		*) log_error "unknown endpoint: $ipv" && return 1 ;;
 	esac
 }
 
 auth_url() {
-	local kind="$1" base
+	local kind="$1"
 	base="$(auth_base)"
 	case "$kind" in
 		login) echo "$base/cgi-bin/srun_portal" ;;
@@ -131,6 +136,7 @@ tea() {
 }
 
 log_error() {
+	[ "$quiet" -eq 1 ] && return 0
 	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ] ||
 		[ $LOG_LEVEL == "error" ]; then
 		echo "ERROR $1" >&2
@@ -138,10 +144,12 @@ log_error() {
 }
 
 log_debug() {
+	[ "$quiet" -eq 1 ] && return 0
 	[ $LOG_LEVEL == "debug" ] && echo -e "DEBUG $1" >&2
 }
 
 log_info() {
+	[ "$quiet" -eq 1 ] && return 0
 	if [ $LOG_LEVEL == "info" ] || [ $LOG_LEVEL == "debug" ]; then
 		echo -e "INFO  $1" >&2
 	fi
@@ -191,6 +199,7 @@ run_curl() {
 		exit 1
 	fi
 	rm -f "$_err_file"
+	log_debug "curl $@: $_res"
 	printf -v "$_outvar" '%s' "$_res"
 }
 
@@ -245,7 +254,7 @@ login() {
 	check_perm
 	check_user
 	check_pass
-	log_info "auth($ipv) login"
+	log_info "login"
 	log_debug "username: $USERNAME"
 	local ac_id=$(fetch_ac_id)
 	local n="200"
@@ -261,9 +270,9 @@ login() {
 	local token=$(fetch_challenge "$ip")
 	log_debug "token: $token"
 	local info="{SRBX1}$(post_info $token $ac_id)"
-	log_debug "info: <edited>"
+	log_debug "info: <redacted>"
 	local password_md5=$(gen_hmacmd5 $token)
-	log_debug "password_md5: {MD5}<edited>"
+	log_debug "password_md5: {MD5}<redacted>"
 	local AUTH_LOGIN_URL=$(auth_url login)
 	local checksum="$token$USERNAME$token$password_md5$token$ac_id$token$ip$token$n$token$type$token$info"
 	checksum=$(echo -n $checksum | sha1sum -z | cut -d ' ' -f 1)
@@ -287,7 +296,6 @@ login() {
 	local REGEX_SUC_MSG='"suc_msg":"([^"]+)"'
 	[[ $res =~ $REGEX_SUC_MSG ]] && local suc_msg=${BASH_REMATCH[1]}
 	if [ "$suc_msg" != "login_ok" ]; then
-		log_debug "$AUTH_LOGIN_URL: \"$res\""
 		if [ -z $suc_msg ]; then
 			local REGEX_ERR_MSG='"error":"([^"]+)"'
 			[[ $res =~ $REGEX_ERR_MSG ]]
@@ -306,7 +314,7 @@ login() {
 logout() {
 	check_perm
 	check_user
-	log_info "auth($ipv) logout"
+	log_info "logout"
 	log_debug "username: $USERNAME"
 	local AUTH_LOGOUT_URL=$(auth_url logout)
 	local time=$(date +%s)
@@ -333,7 +341,6 @@ logout() {
 	[[ $response =~ $REGEX_SUC_MSG ]]
 	local suc_msg=${BASH_REMATCH[1]}
 	if [ "$suc_msg" != "ok" ]; then
-		log_debug "$AUTH_LOGOUT_URL: \"$response\""
 		log_error "$suc_msg"
 		exit 1
 	else
@@ -343,8 +350,7 @@ logout() {
 }
 
 assert() {
-	("$NAME" -w -a "$ipv" || ("$NAME" -w -a 4 || "$NAME" -w -a 6)) ||
-		"$NAME" -i -a "$ipv"
+	"$NAME" -w -a "$ipv" || "$NAME" -i -a "$ipv"
 }
 
 query_stats() {
@@ -374,20 +380,78 @@ query_stats() {
 	local mac=${BASH_REMATCH[6]}
 	local mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
 	local label_width=18
-	printf "%-${label_width}s %s\n" "Username:" "$user"
-	printf "%-${label_width}s %s\n" "Session Start:" "$login"
-	printf "%-${label_width}s %s h\n" "Session Age:" "$online"
-	printf "%-${label_width}s %s\n" "Billing Profile:" "$billing_name"
-	printf "%-${label_width}s %s\n" "Product Plan:" "$products_name"
-	printf "%-${label_width}s %s\n" "Online Devices:" "$device"
-	printf "%-${label_width}s %s CNY\n" "Balance:" "$balance"
-	printf "%-${label_width}s %s Mi\n" "Session Inbound:" "$in"
-	printf "%-${label_width}s %s Mi\n" "Session Outbound:" "$out"
-	printf "%-${label_width}s %s Mi\n" "Session Total:" "$sum"
-	printf "%-${label_width}s %s Gi\n" "Monthly Total:" "$tot"
-	printf "%-${label_width}s %s\n" "MAC Address:" "$mac"
-	printf "%-${label_width}s %s\n" "IP Address:" "$ip"
-	if command -v jq >/dev/null 2>&1; then
+	if [ $format == json ]; then
+		local devices_json='[]'
+		local raw_json="${res:4:-1}"
+		devices_json="$(echo "$raw_json" | jq '
+			.online_device_detail
+			| select(. != null and . != "")
+			| fromjson
+			| to_entries
+			| map({
+				rad_id: (.key | tonumber),
+				ipv4: (.value.ip // null),
+				ipv6: (.value.ip6 // null),
+				class: (.value.class_name // null),
+				os: (.value.os_name // null)
+			})')"
+
+		json_out \
+			--arg user "$user" \
+			--arg login "$login" \
+			--arg session_hours "$online" \
+			--arg billing_name "$billing_name" \
+			--arg product "$products_name" \
+			--arg device_count "$device" \
+			--arg balance "$balance" \
+			--arg inbound_mib "$in" \
+			--arg outbound_mib "$out" \
+			--arg total_mib "$sum" \
+			--arg monthly_gib "$tot" \
+			--arg mac "$mac" \
+			--arg ip "$ip" \
+			--arg sysver "$sysver" \
+			--argjson devices "$devices_json" \
+			'{
+				user: $user,
+				session: {
+					start: $login,
+					hours: ($session_hours | tonumber)
+				},
+				billing: {
+					name: $billing_name,
+					product: $product,
+					balance_cny: ($balance | tonumber)
+				},
+				network: {
+					ip: $ip,
+					mac: $mac,
+					devices: $devices
+				},
+				traffic: {
+					in_mib: ($inbound_mib | tonumber),
+					out_mib: ($outbound_mib | tonumber),
+					total_mib: ($total_mib | tonumber),
+					monthly_gib: ($monthly_gib | tonumber)
+				},
+				system: {
+					version: $sysver
+				}
+			}'
+	else
+		printf "%-${label_width}s %s\n" "Username:" "$user"
+		printf "%-${label_width}s %s\n" "Session Start:" "$login"
+		printf "%-${label_width}s %s h\n" "Session Age:" "$online"
+		printf "%-${label_width}s %s\n" "Billing Profile:" "$billing_name"
+		printf "%-${label_width}s %s\n" "Product Plan:" "$products_name"
+		printf "%-${label_width}s %s\n" "Online Devices:" "$device"
+		printf "%-${label_width}s %s CNY\n" "Balance:" "$balance"
+		printf "%-${label_width}s %s Mi\n" "Session Inbound:" "$in"
+		printf "%-${label_width}s %s Mi\n" "Session Outbound:" "$out"
+		printf "%-${label_width}s %s Mi\n" "Session Total:" "$sum"
+		printf "%-${label_width}s %s Gi\n" "Monthly Total:" "$tot"
+		printf "%-${label_width}s %s\n" "MAC Address:" "$mac"
+		printf "%-${label_width}s %s\n" "IP Address:" "$ip"
 		local res="${res:4:-1}"
 		local device_detail=$(echo "$res" | jq -r '.online_device_detail // empty' 2>/dev/null)
 		if [ -n "$device_detail" ] && [ "$device_detail" != "null" ]; then
@@ -412,18 +476,20 @@ query_stats() {
 			echo
 			printf "%-${label_width}s %s\n" "Device Details:" "${dim}No details available${reset}"
 		fi
-	else
-		log_info "jq not found, skipping device details parsing"
+		printf "%-${label_width}s %s\n" "System Version:" "$sysver"
 	fi
-	printf "%-${label_width}s %s\n" "System Version:" "$sysver"
+}
+
+json_out() {
+	jq -n "$@"
 }
 
 whoami() {
 	local res
-	run_curl res "$(auth_url user_info)"
-	log_debug "$(auth_url user_info): $res"
+	local url="$(auth_url user_info)"
+	run_curl res "$url"
 	local cnt=$(echo $res | tr ',' '\n' | wc -l)
-	if [ $cnt != 22 ]; then
+	if [ $cnt != $RAD_USER_KEY_LENGHT ]; then
 		log_error "possibly not online"
 		exit 1
 	else
@@ -431,14 +497,19 @@ whoami() {
 		if [ $verbose -eq 1 ]; then
 			query_stats "$res"
 		else
-			echo "$user"
+			if [ "$format" = "json" ]; then
+				json_out --arg user "$user" \
+					'{user: $user}'
+			else
+				echo "$user"
+			fi
 		fi
 	fi
 	exit 0
 }
 
 help() {
-	echo "See $NAME(1) for details."
+	echo "see $NAME(1) for details."
 	exit 0
 }
 
@@ -500,7 +571,7 @@ preprocess_args "$@"
 set -- "${new_args[@]}"
 mkdir -p "$CACHE_DIR"
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
 	case "$1" in
 		-h | --help)
 			op="help"
@@ -546,30 +617,66 @@ while [[ $# -gt 0 ]]; do
 			curl_extra_args+=($2)
 			shift 2
 			;;
+		--output)
+			format="$2"
+			shift 2
+			;;
+		-q | --quiet)
+			quiet=1
+			shift
+			;;
 		--)
 			shift
 			break
 			;;
 		*)
-			echo "Unknown option: $1" >&2
+			log_error "unknown option: $1"
 			exit 1
 			;;
 	esac
 done
 
-if [ $ipv == "auto" ]; then
+info_probe() {
+	log_debug "probe via rad_user_info"
+	run_curl res "$TUNET_BASE_AUTH4/cgi-bin/rad_user_info"
+	local cnt=$(echo $res | tr ',' '\n' | wc -l)
+	if [ $cnt != $RAD_USER_KEY_LENGHT ]; then
+		run_curl res "$TUNET_BASE_AUTH6/cgi-bin/rad_user_info"
+		local cnt=$(echo $res | tr ',' '\n' | wc -l)
+		if [ $cnt != $RAD_USER_KEY_LENGHT ]; then
+			ipv="generic"
+		else
+			ipv=6
+		fi
+	else
+		ipv=4
+	fi
+}
+
+if [[ $ipv == "auto" && $op != help ]]; then
 	REGEX_IPV='//auth([46])\.tsinghua\.edu\.cn'
 	run_curl res $REDIRECT_URL
 	if [[ $res =~ $REGEX_IPV ]]; then
 		ipv="${BASH_REMATCH[1]}"
 	else
-		ipv="either"
+		info_probe
 	fi
+	log_debug "set endpoint: $ipv"
 fi
 
-if [[ ! ($ipv == "4" || $ipv == "6" || "$ipv" == "either") ]]; then
-	echo "Unknown auth version: $ipv" >&2
-fi
+case "$format" in
+	text) ;;
+	json)
+		if ! command -v jq >/dev/null 2>&1; then
+			log_error "jq not found"
+			exit 1
+		fi
+		;;
+	*)
+		log_error "unknown output format: $format"
+		exit 1
+		;;
+esac
 
 case $op in
 	help)

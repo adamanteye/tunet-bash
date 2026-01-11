@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.4.0
+
+- `either` 字段改为 `generic`
+- 添加 `-o`, `--output` 选项, 以 json 格式输出
+- 添加 `-q`. `--quiet` 选项
+
 ## 1.3.3
 
 - 更改 systemd 服务日志等级

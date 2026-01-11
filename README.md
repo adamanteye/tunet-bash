@@ -161,6 +161,8 @@ $ sudo journalctl -u tunet-bash.service
 - [x] 余额查询
 - [x] 在线设备查询
 
+- [x] 输出为 json
+
 - [ ] 下线特定 IP
 - [ ] 准入代认证
 
@@ -202,6 +204,4 @@ $ sudo journalctl -u tunet-bash.service
 校园网准入联动 (srun portal) 的 IPv6 地址必须是 DHCPv6 下发的.
 但是建华楼有线网配置错误, 设备可能会错误拿到 SLAAC 地址.
 
-## Change Log
-
-查看[变更日志](./CHANGELOG.md).
+## [变更日志](./CHANGELOG.md)
