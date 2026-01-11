@@ -37,7 +37,7 @@ auth_base() {
 		6) echo "$TUNET_BASE_AUTH6" ;;
 		4) echo "$TUNET_BASE_AUTH4" ;;
 		generic) echo "$TUNET_BASE_AUTH" ;;
-		*) log_error "unknown endpoint: $ipv" && return 1 ;;
+		*) log_error "unknown endpoint: $ipv" && exit 2 ;;
 	esac
 }
 
@@ -50,7 +50,6 @@ auth_url() {
 		web) echo "$base/srun_portal_pc" ;;
 		challenge) echo "$base/cgi-bin/get_challenge" ;;
 		user_info) echo "$base/cgi-bin/rad_user_info" ;;
-		*) return 1 ;;
 	esac
 }
 
@@ -396,7 +395,11 @@ query_stats() {
 	local sysver=${BASH_REMATCH[4]}
 	local balance=${BASH_REMATCH[5]}
 	local mac=${BASH_REMATCH[6]}
-	mac=$(echo -n "$mac" | tr -- '-ABCDEF' ':abcdef')
+	mac=${mac,,}
+	mac=${mac//[^0-9a-f]/}
+	mac=$(printf '%s:%s:%s:%s:%s:%s\n' \
+		"${mac:0:2}" "${mac:2:2}" "${mac:4:2}" \
+		"${mac:6:2}" "${mac:8:2}" "${mac:10:2}")
 	local label_width=18
 	if [ "$format" == json ]; then
 		local devices_json='[]'
@@ -663,7 +666,7 @@ while [ $# -gt 0 ]; do
 			;;
 		*)
 			log_error "unknown option: $1"
-			exit 1
+			exit 2
 			;;
 	esac
 done
@@ -710,7 +713,7 @@ case "$format" in
 		;;
 	*)
 		log_error "unknown output format: $format"
-		exit 1
+		exit 2
 		;;
 esac
 
