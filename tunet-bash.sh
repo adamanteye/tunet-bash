@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/env bash
 
 set -o pipefail
 
@@ -68,7 +68,7 @@ fill_key() {
 	for ((i = 0; i < KEY_ARRAY_LENGTH; i++)); do
 		local temp_u32=0
 		for ((j = 0; j < 4; j++)); do
-			temp_u32=$((temp_u32 | (array[$((i * 4 + j))] << (8 * j))))
+			temp_u32=$((temp_u32 | (array[i * 4 + j] << (8 * j))))
 		done
 		key_array[i]=$temp_u32
 	done
@@ -98,7 +98,7 @@ encode() {
 	local d=0
 	local z=0
 	for ((i = 0; i < 4 && $((n * 4 + i)) < ${#data_array[@]}; i++)); do
-		z=$((z | (data_array[$((n * 4 + i))] << (8 * i))))
+		z=$((z | (data_array[n * 4 + i] << (8 * i))))
 	done
 	for ((i = 0; i < q; i++)); do
 		d=$((d + 0x9E3779B9))
@@ -107,11 +107,11 @@ encode() {
 			local y_index=$((((p + 1) % (n + 1)) * 4))
 			local y=0
 			for ((j = 0; j < 4 && $((y_index + j)) < ${#data_array[@]}; j++)); do
-				y=$((y | (data_array[$((y_index + j))] << (8 * j))))
+				y=$((y | (data_array[y_index + j] << (8 * j))))
 			done
 			local m=$(((z >> 5) ^ (y << 2)))
 			m=$((m + ((y >> 3) ^ (z << 4) ^ (d ^ y))))
-			m=$((m + (key_array[$(((p & 3) ^ e))] ^ z)))
+			m=$((m + (key_array[(p & 3) ^ e] ^ z)))
 			m_index=$((p * 4))
 			local temp_m=$((data_array[m_index] | (data_array[m_index + 1] << 8) | (data_array[m_index + 2] << 16) | (data_array[m_index + 3] << 24)))
 			m=$((m + temp_m))
@@ -172,7 +172,7 @@ check_pass() {
 			log_error "please configure password"
 			exit 1
 		else
-			PASSWORD="$(echo -n "$PASSWORD" | base64 -d)"
+			PASSWORD="$(printf '%s' "$PASSWORD" | base64 -d)"
 		fi
 	else
 		log_debug "passname: $PASSNAME"
@@ -186,17 +186,14 @@ run_curl() {
 	local _res
 	local _err_file
 	_err_file=$(mktemp)
-
-	# -sS: Silent mode but show errors.
-	# Capture stderr to a temp file to report specific errors on failure.
+	# curl -sS: silent mode but show errors
 	_res=$(curl -sS "${curl_extra_args[@]}" "$@" 2>"$_err_file")
 	local _ret=$?
-
 	if [ $_ret -ne 0 ]; then
 		local _err_msg
-		_err_msg=$(cat "$_err_file")
+		_err_msg=$(<"$_err_file")
+		log_error "$_err_msg"
 		rm -f "$_err_file"
-		log_error "curl connection failed: $_err_msg"
 		exit 1
 	fi
 	rm -f "$_err_file"
@@ -232,15 +229,14 @@ fetch_challenge() {
 	echo "$challenge"
 }
 
-gen_hmacmd5() {
-	echo -n "$1" | openssl dgst -md5 -hmac "" -r | cut -d ' ' -f 1
-}
-
 post_info() {
 	local challenge=$1
 	local json="{\"acid\":\"$2\",\"enc_ver\":\"srun_bx1\",\"ip\":\"\",\"password\":\"$PASSWORD\",\"username\":\"$USERNAME\"}"
 	local data
-	data=$(echo -n "$json" | sed 's/ //g' | sed 's/"acid":"\([0-9]\+\)"/"acid":\1/g')
+	data=${json//[[:space:]]/}
+	if [[ $data =~ \"acid\":\"([0-9]+)\" ]]; then
+		data=${data/\"acid\":\"${BASH_REMATCH[1]}\"/\"acid\":${BASH_REMATCH[1]}}
+	fi
 	tea "$challenge" "$data" | base64 | tr -d '\n' | tr \
 		'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
 		'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA'
@@ -284,12 +280,13 @@ login() {
 	info="{SRBX1}$(post_info "$token" "$ac_id")"
 	log_debug "info: <redacted>"
 	local password_md5
-	password_md5=$(gen_hmacmd5 "$token")
+	password_md5="$(openssl dgst -md5 -hmac '' -r <<<"$token")"
+	password_md5="${password_md5%% *}"
 	log_debug "password_md5: {MD5}<redacted>"
 	local AUTH_LOGIN_URL
 	AUTH_LOGIN_URL=$(auth_url login)
 	local checksum="$token$USERNAME$token$password_md5$token$ac_id$token$ip$token$n$token$type$token$info"
-	checksum=$(echo -n "$checksum" | sha1sum -z | cut -d ' ' -f 1)
+	checksum="$(printf '%s' "$checksum" | sha1sum -z | cut -d ' ' -f 1)"
 	log_debug "checksum: $checksum"
 	local res
 	run_curl res "$AUTH_LOGIN_URL" \
@@ -336,13 +333,12 @@ logout() {
 	time=$(date +%s)
 	local res
 	run_curl res "$(auth_url user_info)"
-	local ip
-	ip=$(echo "$res" | cut -d ',' -f9)
+	IFS=, read -r _ _ _ _ _ _ _ _ ip _ <<<"$res"
 	local unbind="1"
 	log_debug "ip: $ip"
 	local sign
-	sign=$(echo -n "$time$USERNAME$ip$unbind$time" | sha1sum -z |
-		cut -d ' ' -f 1)
+	sign=$(printf '%s' "$time$USERNAME$ip$unbind$time" | sha1sum -z)
+	sign="${sign%% *}"
 	if [ -z "$ip" ]; then
 		log_error "not online"
 		exit 1
@@ -524,8 +520,7 @@ whoami() {
 		log_error "possibly not online"
 		exit 1
 	else
-		local user
-		user=$(echo "$res" | cut -d ',' -f1)
+		local user="${res%%,*}"
 		if [ $verbose -eq 1 ]; then
 			query_stats "$res"
 		else
@@ -564,7 +559,8 @@ config() {
 			read -s -p "password: " PASSWORD
 			echo
 		done
-		echo "export TUNET_PASSWORD=$(echo -n "$PASSWORD" | base64)" >>"$CACHE_DIR/passwd"
+		echo "export TUNET_PASSWORD=$(printf '%s' "$PASSWORD" | base64)" \
+			>>"$CACHE_DIR/passwd"
 	fi
 	chmod 600 "$CACHE_DIR/passwd"
 }
