@@ -11,7 +11,7 @@
 #### Arch
 
 ```
-$ paru -S tunet-bash
+paru -S tunet-bash
 ```
 
 #### Debian
@@ -45,19 +45,19 @@ sudo apt-get update && sudo apt-get install tunet-bash
 ### 从源码安装
 
 ```sh
-$ make install
+make install
 ```
 
 或者安装到自定义路径:
 
 ```sh
-$ sudo make prefix=/usr/local install
+sudo make prefix=/usr/local install
 ```
 
 如果要卸载:
 
 ```sh
-$ make uninstall
+make uninstall
 ```
 
 注意: 从源码安装**默认不会**拷贝 `systemd` 定时任务, 如果有需求请修改 `systemd`
@@ -70,7 +70,7 @@ $ make uninstall
 配置用户名和密码, 它们会被写入 `$HOME/.cache/tunet-bash/passwd`:
 
 ```sh
-$ tunet-bash --config
+tunet-bash --config
 username: qingxiaohua
 password:
 ```
@@ -78,7 +78,7 @@ password:
 通过 auth4 登录
 
 ```sh
-$ tunet-bash --login --auth 4
+tunet-bash --login --auth 4
 INFO auth4 login
 INFO login_ok
 ```
@@ -86,12 +86,12 @@ INFO login_ok
 查询当前登入用户:
 
 ```sh
-$ tunet-bash --whoami
+tunet-bash --whoami
 qingxiaohua
 ```
 
 ```sh
-$ tunet-bash --whoami --verbose
+tunet-bash --whoami --verbose
 Username:          qingxiaohua
 Session Start:     2025-10-18T13:54:35+08:00
 Session Age:       0.29 h
@@ -125,7 +125,7 @@ System Version:    1.01.20250403
 使用 [pass](https://www.passwordstore.org/) 存储密码:
 
 ```sh
-$ tunet-bash --config --pass
+tunet-bash --config --pass
 username: qingxiaohua
 passname: tsinghua/qingxiaohua
 ```
@@ -139,7 +139,7 @@ passname: tsinghua/qingxiaohua
 启用定时任务:
 
 ```sh
-$ sudo systemd enable --now tunet-bash.timer
+sudo systemd enable --now tunet-bash.timer
 ```
 
 查看日志 (如果没有输出, 可尝试修改日志等级为
@@ -147,7 +147,7 @@ $ sudo systemd enable --now tunet-bash.timer
 ):
 
 ```sh
-$ sudo journalctl -u tunet-bash.service
+sudo journalctl -u tunet-bash.service
 ```
 
 ## 功能

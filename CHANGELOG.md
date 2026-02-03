@@ -1,5 +1,7 @@
 # Change Log
 
+## 1.4.1
+
 ## 1.4.0
 
 - `either` 字段改为 `generic`
