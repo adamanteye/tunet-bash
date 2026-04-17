@@ -337,8 +337,7 @@ logout() {
 	local unbind="1"
 	log_debug "ip: $ip"
 	local sign
-	sign=$(printf '%s' "$time$USERNAME$ip$unbind$time" | sha1sum -z)
-	sign="${sign%% *}"
+	sign="$(printf '%s' "$time$USERNAME$ip$unbind$time" | sha1sum -z | cut -d ' ' -f 1)"
 	if [ -z "$ip" ]; then
 		log_error "not online"
 		exit 1
@@ -406,7 +405,7 @@ query_stats() {
 			| fromjson
 			| to_entries
 			| map({
-				rad_id: (.key | tonumber),
+				rad: (.key | tonumber),
 				ipv4: (.value.ip // null),
 				ipv6: (.value.ip6 // null),
 				class: (.value.class_name // null),
