@@ -1,0 +1,16 @@
+name: Build and Push Docker Image
+run-name: Build and Push Docker Image ${{ github.ref_name }}
+on:
+  push:
+    tags:
+      - '*.*.*'
+jobs:
+  call-docker-build:
+    permissions:
+      contents: read
+      packages: write
+    uses: adamanteye/actions/.github/workflows/docker.yml@master
+    with:
+      name: ${{ github.ref_name }}
+      label: ${{ github.ref_name }}
+      owner: ${{ github.repository_owner }}
