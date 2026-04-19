@@ -104,7 +104,7 @@ It is implemented in POSIX-compatible bash with minimal external dependencies.
 *tunet-bash* *-o* *-a* _6_
 	Log out using IPv6 authentication (auth6).
 
-*tunet-bash* *-w* *-v* *--curl-extra-args* _'--interface wg0'_
+*tunet-bash* *-w* *-v* *--curl-extra-args* _'--interface=wg0'_
 	Query current account status verbosely using interface wg0.
 
 # ENVIRONMENT

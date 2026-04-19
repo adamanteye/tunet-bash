@@ -4,11 +4,11 @@ MAKEFLAGS += --no-builtin-rules
 .PHONY: install uninstall man clean help
 .DEFAULT_GOAL := help
 
-prefix := $(HOME)/.local
+prefix  := $(HOME)/.local
 package := tunet-bash
-init := none
+init    := none
 
-ifeq ($(V),1)
+ifeq ($(V),y)
   Q :=
 else
   Q := @
@@ -18,10 +18,10 @@ define log
 	@printf '  %-6s %s\n' "$(1)" "$(2)"
 endef
 
-bindir := $(destdir)$(prefix)/bin
-mandir := $(destdir)$(prefix)/share/man/man1
+bindir      := $(destdir)$(prefix)/bin
+mandir      := $(destdir)$(prefix)/share/man/man1
 fishcompdir := $(destdir)$(prefix)/share/fish/vendor_completions.d
-systemdir := $(destdir)$(prefix)/lib/systemd/system
+systemdir   := $(destdir)$(prefix)/lib/systemd/system
 
 install: $(package).1.gz $(package).sh completions/$(package).fish
 	$(call log,INST,"$(bindir)/$(package)")
@@ -69,7 +69,6 @@ $(package).1: man/$(package).1.scd
 	$(call log,MAN,$@)
 	$(Q)scdoc < man/$(package).1.scd > $(package).1
 
-
 $(package).1.gz: $(package).1
 	$(call log,GZIP,$@)
 	$(Q)gzip -c $< > $@
@@ -86,4 +85,4 @@ help:
 	@printf "  prefix=<dir>     Installation prefix (default: $(prefix))\n"
 	@printf "  destdir=<dir>    Staging directory for packaging (default: none)\n"
 	@printf "  init=<system>    Init system (default: none, supported: systemd)\n"
-	@printf "  V=1              Verbose mode (show commands)\n"
+	@printf "  V=y              Verbose mode (show commands)\n"

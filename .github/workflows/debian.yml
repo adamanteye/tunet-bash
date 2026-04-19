@@ -1,0 +1,55 @@
+name: Publish Debian Repo
+on:
+  push:
+    tags:
+      - "*.*.*"
+permissions:
+  contents: read
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      DEBFULLNAME: Xuelin Yang
+      DEBEMAIL: xuelin@adamanteye.cc
+      REPREPRO_GPG_PRIVATE_KEY: ${{ secrets.REPREPRO_GPG_PRIVATE_KEY }}
+      REPREPRO_GPG_KEY_ID: ${{ secrets.REPREPRO_GPG_KEY_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y devscripts debhelper fakeroot scdoc reprepro
+      - name: Import GPG key (optional)
+        if: env.REPREPRO_GPG_PRIVATE_KEY != ''
+        run: |
+          echo "$REPREPRO_GPG_PRIVATE_KEY" | gpg --batch --import
+      - name: Build debian package
+        run: dpkg-buildpackage -us -uc -b
+      - name: Create reprepro repo
+        run: |
+          mkdir -p repo/conf
+          SIGNWITH="no"
+          if [ -n "${REPREPRO_GPG_KEY_ID}" ]; then
+            SIGNWITH="${REPREPRO_GPG_KEY_ID}"
+          fi
+          cat > repo/conf/distributions <<EOF
+          Origin: tunet-bash
+          Label: tunet-bash
+          Suite: trixie
+          Codename: trixie
+          Components: main
+          Architectures: all
+          SignWith: ${SIGNWITH}
+          Description: tunet-bash debian repository
+          EOF
+          reprepro -b repo includedeb trixie ../*.deb
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages publish repo --project-name=${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
