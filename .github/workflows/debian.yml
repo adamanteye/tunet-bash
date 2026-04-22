@@ -43,6 +43,7 @@ jobs:
           trap 'rm -f "$key_file"' EXIT
           printf '%s' "$REPREPRO_GPG_PRIVATE_KEY" > "$key_file"
           gpg --batch --import "$key_file"
+          gpg -K
       - name: Create reprepro repo
         env:
           BUILD_ARTIFACTS_DIR: ${{ runner.temp }}/debian-artifacts

@@ -17,7 +17,7 @@ paru -S tunet-bash
 #### Debian
 
 ```sh
-curl -fsS https://gpg.adamanteye.cc/ada.pub | sudo tee /etc/apt/keyrings/debian.adamanteye.cc.asc > /dev/null
+sudo curl -fsS https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x744233565e837dd4b918d9ef53d64eb719901bd8 -o debian.adamanteye.cc.asc
 
 cat <<EOF | sudo tee /etc/apt/sources.list.d/adamanteye.sources > /dev/null
 Types: deb
