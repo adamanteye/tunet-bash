@@ -8,9 +8,6 @@ permissions:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    env:
-      REPREPRO_GPG_PRIVATE_KEY: ${{ secrets.REPREPRO_GPG_PRIVATE_KEY }}
-      REPREPRO_GPG_KEY_ID: ${{ secrets.REPREPRO_GPG_KEY_ID }}
     steps:
       - uses: actions/checkout@v6
       - name: Build Debian packages
@@ -25,12 +22,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gnupg reprepro
       - name: Import GPG key
-        if: env.REPREPRO_GPG_PRIVATE_KEY != ''
+        if: ${{ secrets.REPREPRO_GPG_PRIVATE_KEY != '' }}
+        env:
+          REPREPRO_GPG_PRIVATE_KEY: ${{ secrets.REPREPRO_GPG_PRIVATE_KEY }}
         run: |
-          printf '%s' "$REPREPRO_GPG_PRIVATE_KEY" | gpg --batch --import
+          key_file="$(mktemp)"
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s' "$REPREPRO_GPG_PRIVATE_KEY" > "$key_file"
+          gpg --batch --import "$key_file"
       - name: Create reprepro repo
         env:
           BUILD_ARTIFACTS: ${{ steps.build.outputs.artifacts }}
+          REPREPRO_GPG_KEY_ID: ${{ secrets.REPREPRO_GPG_KEY_ID }}
         run: |
           mkdir -p repo/conf
           sign_with=no
