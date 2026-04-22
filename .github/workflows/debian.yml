@@ -2,50 +2,56 @@ name: Publish Debian Repo
 on:
   push:
     tags:
-      - "*.*.*"
+      - '*.*.*'
 permissions:
   contents: read
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     env:
-      DEBFULLNAME: Xuelin Yang
-      DEBEMAIL: xuelin@adamanteye.cc
       REPREPRO_GPG_PRIVATE_KEY: ${{ secrets.REPREPRO_GPG_PRIVATE_KEY }}
       REPREPRO_GPG_KEY_ID: ${{ secrets.REPREPRO_GPG_KEY_ID }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
     steps:
       - uses: actions/checkout@v6
-      - name: Install build tools
+      - name: Build Debian packages
+        id: build
+        uses: jtdor/build-deb-action@v1
+        with:
+          docker-image: debian:trixie-slim
+          artifacts-dir: debian/artifacts
+          buildpackage-opts: -us -uc -b
+      - name: Install publishing tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y devscripts debhelper fakeroot scdoc reprepro
-      - name: Import GPG key (optional)
+          sudo apt-get install -y gnupg reprepro
+      - name: Import GPG key
         if: env.REPREPRO_GPG_PRIVATE_KEY != ''
         run: |
-          echo "$REPREPRO_GPG_PRIVATE_KEY" | gpg --batch --import
-      - name: Build debian package
-        run: dpkg-buildpackage -us -uc -b
+          printf '%s' "$REPREPRO_GPG_PRIVATE_KEY" | gpg --batch --import
       - name: Create reprepro repo
+        env:
+          BUILD_ARTIFACTS: ${{ steps.build.outputs.artifacts }}
         run: |
           mkdir -p repo/conf
-          SIGNWITH="no"
-          if [ -n "${REPREPRO_GPG_KEY_ID}" ]; then
-            SIGNWITH="${REPREPRO_GPG_KEY_ID}"
+          sign_with=no
+          if [ -n "$REPREPRO_GPG_KEY_ID" ]; then
+            sign_with="$REPREPRO_GPG_KEY_ID"
           fi
           cat > repo/conf/distributions <<EOF
-          Origin: tunet-bash
-          Label: tunet-bash
-          Suite: trixie
+          Origin: debian.adamanteye.cc
+          Label: Debian
+          Suite: stable
           Codename: trixie
           Components: main
-          Architectures: all
-          SignWith: ${SIGNWITH}
-          Description: tunet-bash debian repository
+          Architectures: source amd64 arm64
+          SignWith: ${sign_with}
+          Description: debian packages created by adamanteye
           EOF
-          reprepro -b repo includedeb trixie ../*.deb
+          while IFS= read -r artifact; do
+            case "$artifact" in
+              *.deb) reprepro -b repo includedeb trixie "$artifact" ;;
+            esac
+          done <<< "$BUILD_ARTIFACTS"
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
