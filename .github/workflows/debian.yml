@@ -6,23 +6,36 @@ on:
 permissions:
   contents: read
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
+    container: debian:trixie-slim
     steps:
-      - uses: actions/checkout@v6
-      - name: Build Debian packages
-        id: build
-        uses: jtdor/build-deb-action@v1
-        with:
-          docker-image: debian:trixie-slim
-          artifacts-dir: debian/artifacts
-          buildpackage-opts: -us -uc -b
-      - name: Install publishing tools
+      - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gnupg reprepro
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            debhelper \
+            devscripts \
+            fakeroot \
+            git \
+            gnupg \
+            nodejs \
+            npm \
+            reprepro \
+            scdoc
+      - name: Checkout source
+        uses: actions/checkout@v6
+      - name: Build Debian packages
+        env:
+          BUILD_ARTIFACTS_DIR: ${{ runner.temp }}/debian-artifacts
+        run: |
+          mkdir -p "$BUILD_ARTIFACTS_DIR"
+          dpkg-buildpackage -us -uc -b
+          find .. -maxdepth 1 -type f \( -name '*.deb' -o -name '*.buildinfo' -o -name '*.changes' \) -exec cp -t "$BUILD_ARTIFACTS_DIR" {} +
       - name: Import GPG key
-        if: ${{ secrets.REPREPRO_GPG_PRIVATE_KEY != '' }}
         env:
           REPREPRO_GPG_PRIVATE_KEY: ${{ secrets.REPREPRO_GPG_PRIVATE_KEY }}
         run: |
@@ -32,7 +45,7 @@ jobs:
           gpg --batch --import "$key_file"
       - name: Create reprepro repo
         env:
-          BUILD_ARTIFACTS: ${{ steps.build.outputs.artifacts }}
+          BUILD_ARTIFACTS_DIR: ${{ runner.temp }}/debian-artifacts
           REPREPRO_GPG_KEY_ID: ${{ secrets.REPREPRO_GPG_KEY_ID }}
         run: |
           mkdir -p repo/conf
@@ -50,11 +63,34 @@ jobs:
           SignWith: ${sign_with}
           Description: debian packages created by adamanteye
           EOF
-          while IFS= read -r artifact; do
-            case "$artifact" in
-              *.deb) reprepro -b repo includedeb trixie "$artifact" ;;
-            esac
-          done <<< "$BUILD_ARTIFACTS"
+          found=0
+          for artifact in "$BUILD_ARTIFACTS_DIR"/*.deb; do
+            if [ ! -e "$artifact" ]; then
+              continue
+            fi
+            found=1
+            reprepro -b repo includedeb trixie "$artifact"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "No .deb artifacts found in $BUILD_ARTIFACTS_DIR" >&2
+            exit 1
+          fi
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-output
+          path: repo/
+          retention-days: 1
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: build-output
+          path: repo/
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:

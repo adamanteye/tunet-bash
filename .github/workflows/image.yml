@@ -10,6 +10,6 @@ jobs:
       packages: write
     uses: adamanteye/actions/.github/workflows/docker.yml@master
     with:
-      name: ${{ github.ref_name }}
+      name: ${{ github.event.repository.name }}
       label: ${{ github.ref_name }}
       owner: ${{ github.repository_owner }}
