@@ -546,7 +546,39 @@ whoami() {
 }
 
 help() {
-	echo "see $NAME(1) for details."
+	cat <<EOF
+Usage:
+  $NAME [--whoami] [OPTIONS]
+  $NAME --login [OPTIONS]
+  $NAME --logout [OPTIONS]
+  $NAME --config [--pass]
+  $NAME --assert [OPTIONS]
+
+Actions:
+  -w, --whoami          Show current account status (default)
+  -i, --login           Log in to the network
+  -o, --logout          Log out from the network
+  -c, --config          Configure stored credentials
+      --assert          Log in if not already online
+
+Options:
+  -a, --auth VERSION    Authentication endpoint: auto, 4, 6, generic
+  -v, --verbose         Show detailed status with --whoami
+  -q, --quiet           Suppress log output
+      --output FORMAT   Output format: text, json
+      --pass            Use pass(1) when configuring credentials
+      --curl-extra-args ARG
+                        Pass one extra argument to curl; repeat for more
+  -h, --help            Show this help
+      --version         Show version
+
+Examples:
+  $NAME -w -v
+  $NAME -i -a 4
+  $NAME -w -v --curl-extra-args '--interface' --curl-extra-args 'if!eth0'
+
+See $NAME(1) for details.
+EOF
 	exit 0
 }
 
