@@ -7,7 +7,7 @@ LANG=$LC_ALL
 SELF=${BASH_SOURCE[0]}
 
 NAME='tunet-bash'
-VERSION='1.4.2'
+VERSION='1.4.3'
 
 REDIRECT_URL='http://info.tsinghua.edu.cn/'
 TUNET_BASE_AUTH4='https://auth4.tsinghua.edu.cn'
