@@ -27,6 +27,7 @@ data_array=()
 curl_extra_args=()
 curl_extra_args+=("--connect-timeout")
 curl_extra_args+=("500")
+default_curl_extra_args_len=${#curl_extra_args[@]}
 
 verbose=0
 ipv=auto
@@ -375,7 +376,15 @@ logout() {
 }
 
 assert() {
-	"$SELF" -w -a "$ipv" || "$SELF" -i -a "$ipv"
+	local -a args=()
+	local i
+	[ "$verbose" -eq 1 ] && args+=("-v")
+	[ "$quiet" -eq 1 ] && args+=("-q")
+	[ "$format" != "text" ] && args+=("--output" "$format")
+	for ((i = default_curl_extra_args_len; i < ${#curl_extra_args[@]}; i++)); do
+		args+=("--curl-extra-args" "${curl_extra_args[i]}")
+	done
+	"$SELF" -w -a "$ipv" "${args[@]}" || "$SELF" -i -a "$ipv" "${args[@]}"
 }
 
 query_stats() {
