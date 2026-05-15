@@ -81,9 +81,9 @@ It is implemented in POSIX-compatible bash with minimal external dependencies.
 ## Networking and Debugging
 
 *--curl-extra-args* _ARG_
-	Pass extra arguments to *curl*(1).
+	Pass one extra argument to *curl*(1).
 
-	This option may be specified multiple times.
+	Specify this option multiple times to pass multiple curl arguments.
 
 ## Informational Options
 
@@ -104,8 +104,8 @@ It is implemented in POSIX-compatible bash with minimal external dependencies.
 *tunet-bash* *-o* *-a* _6_
 	Log out using IPv6 authentication (auth6).
 
-*tunet-bash* *-w* *-v* *--curl-extra-args* _'--interface=wg0'_
-	Query current account status verbosely using interface wg0.
+*tunet-bash* *-w* *-v* *--curl-extra-args* _'--interface'_ *--curl-extra-args* _'if!eth0'_
+	Query current account status verbosely using interface eth0.
 
 # ENVIRONMENT
 

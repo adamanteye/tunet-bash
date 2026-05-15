@@ -4,6 +4,7 @@ set -o pipefail
 
 LC_ALL=C.UTF-8
 LANG=$LC_ALL
+SELF=${BASH_SOURCE[0]}
 
 NAME='tunet-bash'
 VERSION='1.4.1'
@@ -24,6 +25,8 @@ LOG_LEVEL=${LOG:-'info'}
 key_array=()
 data_array=()
 curl_extra_args=()
+curl_extra_args+=("--connect-timeout")
+curl_extra_args+=("500")
 
 verbose=0
 ipv=auto
@@ -140,18 +143,20 @@ log_error() {
 	[ "$quiet" -eq 1 ] && return 0
 	if [ "$LOG_LEVEL" == "info" ] || [ "$LOG_LEVEL" == "debug" ] ||
 		[ "$LOG_LEVEL" == "error" ]; then
-		echo "ERROR $1" >&2
+		if [ -n "$1" ]; then
+			echo "ERROR $1" >&2
+		fi
 	fi
 }
 
 log_debug() {
 	[ "$quiet" -eq 1 ] && return 0
-	[ "$LOG_LEVEL" == "debug" ] && echo -e "DEBUG $1" >&2
+	[ "$LOG_LEVEL" == "debug" ] && [ -n "$1" ] && echo -e "DEBUG $1" >&2
 }
 
 log_info() {
 	[ "$quiet" -eq 1 ] && return 0
-	if [ "$LOG_LEVEL" == "info" ] || [ "$LOG_LEVEL" == "debug" ]; then
+	if [ "$LOG_LEVEL" == "info" ] || [ "$LOG_LEVEL" == "debug" ] && [ -n "$1" ]; then
 		echo -e "INFO  $1" >&2
 	fi
 }
@@ -186,9 +191,16 @@ run_curl() {
 	local _res
 	local _err_file
 	_err_file=$(mktemp)
+	local _debug_msg="curl"
+	local _arg
+	for _arg in "${curl_extra_args[@]}" "$@"; do
+		_debug_msg+=" $_arg"
+	done
+	log_debug "$_debug_msg"
 	# curl -sS: silent mode but show errors
 	_res=$(curl -sS "${curl_extra_args[@]}" "$@" 2>"$_err_file")
 	local _ret=$?
+	log_debug "$_res"
 	if [ $_ret -ne 0 ]; then
 		local _err_msg
 		_err_msg=$(<"$_err_file")
@@ -197,7 +209,6 @@ run_curl() {
 		exit 1
 	fi
 	rm -f "$_err_file"
-	log_debug "curl $*: $_res"
 	printf -v "$_outvar" '%s' "$_res"
 }
 
@@ -364,7 +375,7 @@ logout() {
 }
 
 assert() {
-	"$NAME" -w -a "$ipv" || "$NAME" -i -a "$ipv"
+	"$SELF" -w -a "$ipv" || "$SELF" -i -a "$ipv"
 }
 
 query_stats() {
