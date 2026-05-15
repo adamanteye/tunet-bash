@@ -150,6 +150,19 @@ sudo systemd enable --now tunet-bash.timer
 sudo journalctl -u tunet-bash.service
 ```
 
+修改定时任务:
+
+```sh
+sudo systemctl edit tunet-bash.service
+```
+
+```
+# 首先赋空 `ExecStart`, 然后指定新命令:
+[Service]
+ExecStart=
+ExecStart=/usr/bin/tunet-bash --assert --curl-extra-args '--interface' --curl-extra-args 'tunet'
+```
+
 ## 功能
 
 - [x] Auth 4
