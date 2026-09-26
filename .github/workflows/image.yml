@@ -1,6 +1,8 @@
 name: Build and Push Docker Image
 on:
   push:
+    branches:
+      - '**'
     tags:
       - '*.*.*'
 jobs:
@@ -11,5 +13,5 @@ jobs:
     uses: adamanteye/actions/.github/workflows/docker.yml@master
     with:
       name: ${{ github.event.repository.name }}
-      label: ${{ github.ref_name }}
+      label: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
       owner: ${{ github.repository_owner }}

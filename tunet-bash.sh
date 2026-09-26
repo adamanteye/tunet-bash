@@ -397,9 +397,9 @@ query_stats() {
 	local out="$f5_out"
 	local tot="$f7_tot"
 	local ip="$f9_ip"
-	online=$((online - login))
+	local online_seconds=$((online - login))
 	local sum=$((in + out))
-	online=$(awk "BEGIN {printf \"%.2f\n\", $online / 3600}")
+	online=$(awk "BEGIN {printf \"%.2f\n\", $online_seconds / 3600}")
 	login="$(date -d "@$login" "-Iseconds")"
 	local res
 	run_curl res "$(auth_url user_info)?callback=any"
@@ -417,11 +417,11 @@ query_stats() {
 		"${mac:6:2}" "${mac:8:2}" "${mac:10:2}")
 	local label_width=18
 	if [ "$format" == json ]; then
-		local devices_json='[]'
+		local devices_json
 		local raw_json="${res:4:-1}"
-		devices_json="$(echo "$raw_json" | jq '
+		devices_json="$(printf '%s' "$raw_json" | jq -c '
 			.online_device_detail
-			| select(. != null and . != "")
+			| if . == null or . == "" then "{}" else . end
 			| fromjson
 			| to_entries
 			| map({
@@ -430,12 +430,13 @@ query_stats() {
 				ipv6: (.value.ip6 // null),
 				class: (.value.class_name // null),
 				os: (.value.os_name // null)
-			})')"
+			})')" || return 1
 		# shellcheck disable=SC2016
 		json_out \
 			--arg user "$user" \
 			--arg login "$login" \
 			--arg session_hours "$online" \
+			--arg session_seconds "$online_seconds" \
 			--arg billing_name "$billing_name" \
 			--arg product "$products_name" \
 			--arg device_count "$device" \
@@ -452,7 +453,8 @@ query_stats() {
 				user: $user,
 				session: {
 					start: $login,
-					hours: ($session_hours | tonumber)
+					hours: ($session_hours | tonumber),
+					seconds: ($session_seconds | tonumber)
 				},
 				billing: {
 					name: $billing_name,
@@ -462,6 +464,7 @@ query_stats() {
 				network: {
 					ip: $ip,
 					mac: $mac,
+					device_count: ($device_count | tonumber),
 					devices: $devices
 				},
 				traffic: {
@@ -541,7 +544,7 @@ whoami() {
 	else
 		local user="${res%%,*}"
 		if [ $verbose -eq 1 ]; then
-			query_stats "$res"
+			query_stats "$res" || exit 1
 		else
 			if [ "$format" = "json" ]; then
 				# shellcheck disable=SC2016
