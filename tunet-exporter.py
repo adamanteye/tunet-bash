@@ -57,51 +57,65 @@ def render_metrics(data, duration, success=True):
 
     start = datetime.fromisoformat(data["session"]["start"])
     devices = data["network"]["devices"]
+    account_labels = {"user": data["user"]}
+    session_labels = {
+        **account_labels,
+        "ip": data["network"]["ip"],
+        "mac": data["network"]["mac"],
+    }
 
     values = (
         (
             "tunet_session_start_time_seconds",
             "Start time of the current session, Unix seconds.",
             start.timestamp(),
+            session_labels,
         ),
         (
             "tunet_session_duration_seconds",
             "Duration of the current session in seconds.",
             data["session"]["seconds"],
+            session_labels,
         ),
         (
             "tunet_account_balance_cny",
             "Account balance in CNY.",
             data["billing"]["balance"],
+            account_labels,
         ),
         (
             "tunet_online_devices",
             "Number of online devices reported by tunet-bash.",
             data["network"]["device_count"],
+            account_labels,
         ),
         (
             "tunet_session_inbound_bytes",
             "Inbound bytes in the current session.",
             data["traffic"]["inbound"],
+            session_labels,
         ),
         (
             "tunet_session_outbound_bytes",
             "Outbound bytes in the current session.",
             data["traffic"]["outbound"],
+            session_labels,
         ),
         (
             "tunet_session_total_bytes",
             "Total bytes in the current session.",
             data["traffic"]["total"],
+            session_labels,
         ),
         (
             "tunet_monthly_traffic_bytes",
             "Monthly traffic in bytes.",
             data["traffic"]["monthly"],
+            account_labels,
         ),
     )
-    for name, description, value in values:
-        family(lines, name, description, [(value, None)])
+    for name, description, value, labels in values:
+        family(lines, name, description, [(value, labels)])
 
     family(
         lines,
@@ -111,7 +125,7 @@ def render_metrics(data, duration, success=True):
             (
                 1,
                 {
-                    "user": data["user"],
+                    **account_labels,
                     "billing_name": data["billing"]["name"],
                     "product": data["billing"]["product"],
                     "system_version": data["system"]["version"],
@@ -123,45 +137,24 @@ def render_metrics(data, duration, success=True):
         lines,
         "tunet_network_info",
         "Current network addresses.",
-        [
-            (
-                1,
-                {
-                    "ip": data["network"]["ip"],
-                    "mac": data["network"]["mac"],
-                },
-            )
-        ],
+        [(1, session_labels)],
     )
 
-    online = []
-    info = []
+    info = {}
     for device in devices:
-        rad_label = {"rad_online_id": device["rad"]}
-        online.append((1, rad_label))
-        info.append(
-            (
-                1,
-                {
-                    **rad_label,
-                    "ipv4": device["ipv4"] or "",
-                    "ipv6": device["ipv6"] or "",
-                    "class": device["class"] or "",
-                    "os": device["os"] or "",
-                },
-            )
-        )
-    family(
-        lines,
-        "tunet_device_online",
-        "Online device identified by RAD online ID.",
-        online,
-    )
+        labels = {
+            **account_labels,
+            "ipv4": device["ipv4"] or "",
+            "ipv6": device["ipv6"] or "",
+            "class": device["class"] or "",
+            "os": device["os"] or "",
+        }
+        info[tuple(labels.items())] = (1, labels)
     family(
         lines,
         "tunet_device_info",
         "Online device address and system information.",
-        info,
+        info.values(),
     )
     return "\n".join(lines) + "\n"
 
