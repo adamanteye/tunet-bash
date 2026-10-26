@@ -238,7 +238,23 @@ ExecStart=/usr/bin/tunet-bash --assert --curl-extra-args '--interface' --curl-ex
 - [Tiny Encryption Algorithm - Wikipedia](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm)
 - [Bash Bitwise Operators | Baeldung on Linux](https://www.baeldung.com/linux/bash-bitwise-operators)
 
-## 已知问题
+## 已知 Billing Profile
+
+- `计费`
+- `教工`
+
+## 已知 Product Plan
+
+- `3`: `学生`
+- `4`: `教工(12元包月)`
+- `64`: `300元服务器账号\t` ~我也不知道为什么制表符都删不干净~
+- `封禁用户【限制校内访问】`
+
+## 其他已知问题
+
+### 解封
+
+观察到解封时会把所有设备都踢下线一次 (尚未确定).
 
 ### 建华楼有线网 IPv6 同时宣告 SLAAC 以及 DHCPv6
 
