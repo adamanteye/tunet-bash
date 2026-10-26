@@ -134,31 +134,18 @@ passname: tsinghua/qingxiaohua
 
 ### Prometheus exporter
 
-Docker 镜像通过 `TUNET_MODE` 选择运行方式：
+| `TUNET_MODE` 环境变量 | 运行方式                                                                      |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `exporter` (默认)     | 提供 `/metrics`, 每次抓取时将 `tunet-bash` 的 JSON 状态转换为 Prometheus 指标 |
+| `keepalive`           | 定期执行 `tunet-bash --assert`, 不提供 `/metrics`                             |
+| `both`                | 同时保活并提供 `/metrics`                                                     |
 
-| `TUNET_MODE` | 运行方式 |
-| --- | --- |
-| `exporter`（默认） | 提供 `/metrics`，每次抓取时将 `tunet-bash` 的 JSON 状态转换为 Prometheus 指标 |
-| `keepalive` | 定期执行 `tunet-bash --assert`，不提供 `/metrics` |
-| `both` | 同时保活并提供 `/metrics` |
+exporter 默认在容器内监听 `[::]:9877`. 可在镜像名后传入 `--auth 4`、`--timeout
+30` 等参数.
 
-```sh
-curl http://127.0.0.1:9877/metrics
-```
-
-exporter 默认在容器内监听 `[::]:9877`，同时接受 IPv4 和 IPv6 连接。
-可在镜像名后传入 `--auth 4`、`--timeout 30` 等参数；需要指定网卡时，
-可重复传入 `--curl-extra-arg=--interface --curl-extra-arg=tunet`。
-
-保活默认每 120 秒执行一次，启动时立即执行；可用
-`TUNET_KEEPALIVE_INTERVAL` 修改间隔（单位：秒）。保活需要凭据：在 env 文件中设置
-`TUNET_USERNAME` 和经过 Base64 编码的 `TUNET_PASSWORD`。如需保活宿主机网络，
-使用 host 网络模式，例如同时运行保活和 exporter：
-
-```sh
-docker run --rm --network host --env-file ./tunet.env \
-  -e TUNET_MODE=both tunet-bash-exporter --auth 4
-```
+保活默认每 120 秒执行一次, 启动时立即执行; 可用 `TUNET_KEEPALIVE_INTERVAL`
+修改间隔 (单位: 秒). 需要在 env 文件中设置 `TUNET_USERNAME` 和经过 Base64 编码的
+`TUNET_PASSWORD`.
 
 ### systemd
 
