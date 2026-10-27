@@ -7,7 +7,7 @@ LANG=$LC_ALL
 SELF=${BASH_SOURCE[0]}
 
 NAME='tunet-bash'
-VERSION='1.4.3'
+VERSION='1.4.4'
 
 REDIRECT_URL='http://info.tsinghua.edu.cn/'
 TUNET_BASE_AUTH4='https://auth4.tsinghua.edu.cn'
@@ -249,7 +249,7 @@ post_info() {
 	if [[ $data =~ \"acid\":\"([0-9]+)\" ]]; then
 		data=${data/\"acid\":\"${BASH_REMATCH[1]}\"/\"acid\":${BASH_REMATCH[1]}}
 	fi
-	tea "$challenge" "$data" | base64 | tr -d '\n' | tr \
+	tea "$challenge" "$data" | base64 -w 0 | tr \
 		'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' \
 		'LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA'
 }
@@ -613,7 +613,7 @@ config() {
 			read -s -p "password: " PASSWORD
 			echo
 		done
-		echo "export TUNET_PASSWORD=$(printf '%s' "$PASSWORD" | base64)" \
+		echo "export TUNET_PASSWORD=$(printf '%s' "$PASSWORD" | base64 -w 0)" \
 			>>"$CACHE_DIR/passwd"
 	fi
 	chmod 600 "$CACHE_DIR/passwd"
